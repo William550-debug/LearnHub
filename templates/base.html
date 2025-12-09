@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LearnHub - Share & Discover Learning Resources{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #10B981;
+            --background: #F9FAFB;
+            --text: #1F2937;
+            --cards: #FFFFFF;
+            --borders: #E5E7EB;
+        }
+
+        .card-hover {
+            transition: all 0.2s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo/Brand -->
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="flex items-center space-x-2">
+                        <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">LH</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900 hidden md:inline">LearnHub</span>
+                    </a>
+                </div>
+
+                <!-- Search Bar (Center - Desktop) -->
+                <div class="flex-1 max-w-2xl mx-4 hidden md:block">
+                    <form action="{% url 'search' %}" method="get" class="relative">
+                        <input
+                            type="text"
+                            name="q"
+                            placeholder="Search resources, topics, users..."
+                            class="w-full px-4 py-2 pl-10 pr-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                        <button type="submit" class="absolute left-3 top-2.5 text-gray-400">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- User Menu (Right) -->
+                <div class="flex items-center space-x-4">
+                    <!-- Mobile Search Toggle -->
+                    <button id="mobile-search-toggle" class="md:hidden text-gray-600">
+                        <i class="fas fa-search"></i>
+                    </button>
+
+                    <!-- User Menu Items -->
+                    {% if user.is_authenticated %}
+                    <div class="hidden md:flex items-center space-x-4">
+                        <a href="{% url 'dashboard' %}" class="text-gray-700 hover:text-indigo-600 font-medium">
+                            <i class="fas fa-home mr-1"></i> Dashboard
+                        </a>
+                        <a href="{% url 'resource_create'  %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-plus mr-1"></i> Add Resource
+                        </a>
+                        <!-- User Dropdown -->
+                        <div class="relative group">
+                            <button class="flex items-center space-x-2 focus:outline-none">
+                                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                                    <span class="text-indigo-600 font-medium">{{ user.username|slice:":2"|upper }}</span>
+                                </div>
+                                <span class="hidden lg:inline text-gray-700">{{ user.username }}</span>
+                                <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden group-hover:block">
+                                <a href="{% url 'user_profile' user_identifier=user.email %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i> Profile
+                                </a>
+                                <a href="{% url 'goal_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-bullseye mr-2"></i> Goals
+                                </a>
+                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-2"></i> Settings
+                                </a>
+                                <hr class="my-2">
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="hidden md:flex items-center space-x-4">
+                        <a href="{% url 'login' %}" class="text-gray-700 hover:text-indigo-600 font-medium">
+                            <i class="fas fa-sign-in-alt mr-1"></i> Login
+                        </a>
+                        <a href="{% url 'register' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-user-plus mr-1"></i> Sign Up
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Mobile Hamburger Menu -->
+                    <button id="mobile-menu-toggle" class="md:hidden text-gray-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Search Bar (Hidden by default) -->
+            <div id="mobile-search-bar" class="hidden py-3 border-t">
+                <form action="{% url 'search' %}" method="get" class="relative">
+                    <input
+                        type="text"
+                        name="q"
+                        placeholder="Search resources, topics, users..."
+                        class="w-full px-4 py-2 pl-10 pr-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                    <button type="submit" class="absolute left-3 top-2.5 text-gray-400">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobile-menu" class="fixed inset-0 bg-gray-800 bg-opacity-50 z-50 hidden md:hidden">
+            <div class="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-lg transform transition-transform duration-300 translate-x-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-xl font-bold">Menu</h2>
+                        <button id="mobile-menu-close" class="text-gray-500">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="space-y-6">
+                        {% if user.is_authenticated %}
+                            {% with initials=user.first_name|default:user.email|slice:":2"|upper %}
+                        <div class="flex items-center space-x-3 p-3 rounded-lg bg-indigo-50">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-indigo-600 font-medium">{{initials}}</span>
+                            </div>
+                            {% endwith %}
+
+
+                            <div>
+                                <p class="font-medium">{{ user.username }}</p>
+                                <p class="text-sm text-gray-500">{{ user.email }}</p>
+                            </div>
+                            {% if user.profile and user.profile.avatar %}
+                                <a href="{% url 'user_profile' user_identifier=user.email %}">
+                                    <img src="{{ user.profile.avatar.url }}" alt="Avatar">
+                                </a>
+                            {% elif user.profile %}
+                                <a href="{% url 'user_profile' user_identifier=user.email %}">
+                                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                        <span class="text-indigo-600 font-medium">{{ user.first_name|default:user.email|slice:":2"|upper }}</span>
+                                    </div>
+                                </a>
+                            {% endif %}
+
+                        </div>
+
+                        <div class="space-y-4">
+                            <a href="{% url 'dashboard' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-home w-5"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="{% url 'user_profile' user_identifier=user.email %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-user w-5"></i>
+                                <span>Profile</span>
+                            </a>
+                            <a href="{% url 'goal_list' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-bullseye w-5"></i>
+                                <span>Goals</span>
+                            </a>
+                            <a href="{% url 'resource_list' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-book w-5"></i>
+                                <span>Resources</span>
+                            </a>
+                            <a href="{% url 'resource_create' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-plus w-5"></i>
+                                <span>Add Resource</span>
+                            </a>
+                        </div>
+
+                        <hr>
+
+                        <div class="space-y-4">
+                            <a href="#" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-cog w-5"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="{% url 'logout' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-sign-out-alt w-5"></i>
+                                <span>Logout</span>
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="space-y-4">
+                            <a href="{% url 'resource_list' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-book w-5"></i>
+                                <span>Browse Resources</span>
+                            </a>
+                            <a href="{% url 'login' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-sign-in-alt w-5"></i>
+                                <span>Login</span>
+                            </a>
+                            <a href="{% url 'register' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                                <i class="fas fa-user-plus w-5"></i>
+                                <span>Register</span>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        {% block content %}
+        <!-- Page content will be inserted here -->
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">LearnHub</h3>
+                    <p class="text-gray-400">A platform for sharing and discovering the best learning resources.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold mb-4">About</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Our Mission</a></li>
+                        <li><a href="#" class="hover:text-white">Team</a></li>
+                        <li><a href="#" class="hover:text-white">Careers</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold mb-4">Contact</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Support</a></li>
+                        <li><a href="#" class="hover:text-white">Feedback</a></li>
+                        <li><a href="#" class="hover:text-white">Partnerships</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold mb-4">Connect</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-github text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-discord text-xl"></i>
+                        </a>
+                    </div>
+                    <p class="text-gray-400 mt-4 text-sm">© 2024 LearnHub. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileMenuClose = document.getElementById('mobile-menu-close');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuContainer = mobileMenu.querySelector('.fixed.inset-y-0');
+
+        if (mobileMenuToggle && mobileMenu) {
+            mobileMenuToggle.addEventListener('click', () => {
+                mobileMenu.classList.remove('hidden');
+                setTimeout(() => {
+                    mobileMenuContainer.classList.remove('translate-x-full');
+                }, 10);
+            });
+        }
+
+        if (mobileMenuClose && mobileMenu) {
+            mobileMenuClose.addEventListener('click', () => {
+                mobileMenuContainer.classList.add('translate-x-full');
+                setTimeout(() => {
+                    mobileMenu.classList.add('hidden');
+                }, 300);
+            });
+        }
+
+        // Mobile Search Toggle
+        const mobileSearchToggle = document.getElementById('mobile-search-toggle');
+        const mobileSearchBar = document.getElementById('mobile-search-bar');
+
+        if (mobileSearchToggle && mobileSearchBar) {
+            mobileSearchToggle.addEventListener('click', () => {
+                mobileSearchBar.classList.toggle('hidden');
+            });
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

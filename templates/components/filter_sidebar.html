@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<!-- Filter Sidebar Component -->
+<div class="space-y-6">
+    <!-- Categories -->
+    <div>
+        <h4 class="font-bold text-gray-700 mb-3 flex items-center">
+            <i class="fas fa-folder mr-2 text-indigo-600"></i> Categories
+        </h4>
+        <div class="space-y-2">
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2" checked>
+                <span class="text-gray-700">Web Development</span>
+                <span class="ml-auto text-gray-500 text-sm">(420)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">Data Science</span>
+                <span class="ml-auto text-gray-500 text-sm">(312)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">Mobile Development</span>
+                <span class="ml-auto text-gray-500 text-sm">(189)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">UI/UX Design</span>
+                <span class="ml-auto text-gray-500 text-sm">(156)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">DevOps</span>
+                <span class="ml-auto text-gray-500 text-sm">(98)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">Machine Learning</span>
+                <span class="ml-auto text-gray-500 text-sm">(204)</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Difficulty -->
+    <div>
+        <h4 class="font-bold text-gray-700 mb-3 flex items-center">
+            <i class="fas fa-signal mr-2 text-indigo-600"></i> Difficulty
+        </h4>
+        <div class="space-y-2">
+            <label class="flex items-center">
+                <input type="radio" name="difficulty" class="mr-2 text-indigo-600" checked>
+                <span class="text-gray-700">All Levels</span>
+            </label>
+            <label class="flex items-center">
+                <input type="radio" name="difficulty" class="mr-2 text-indigo-600">
+                <span class="text-gray-700">
+                    <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                    Beginner
+                </span>
+                <span class="ml-auto text-gray-500 text-sm">(540)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="radio" name="difficulty" class="mr-2 text-indigo-600">
+                <span class="text-gray-700">
+                    <span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                    Intermediate
+                </span>
+                <span class="ml-auto text-gray-500 text-sm">(432)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="radio" name="difficulty" class="mr-2 text-indigo-600">
+                <span class="text-gray-700">
+                    <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                    Advanced
+                </span>
+                <span class="ml-auto text-gray-500 text-sm">(275)</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Resource Type -->
+    <div>
+        <h4 class="font-bold text-gray-700 mb-3 flex items-center">
+            <i class="fas fa-file-alt mr-2 text-indigo-600"></i> Resource Type
+        </h4>
+        <div class="space-y-2">
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2" checked>
+                <span class="text-gray-700">📰 Articles</span>
+                <span class="ml-auto text-gray-500 text-sm">(450)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">🎥 Videos</span>
+                <span class="ml-auto text-gray-500 text-sm">(320)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">📚 Courses</span>
+                <span class="ml-auto text-gray-500 text-sm">(210)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">📖 Books</span>
+                <span class="ml-auto text-gray-500 text-sm">(145)</span>
+            </label>
+            <label class="flex items-center">
+                <input type="checkbox" class="rounded text-indigo-600 mr-2">
+                <span class="text-gray-700">🛠️ Tools</span>
+                <span class="ml-auto text-gray-500 text-sm">(122)</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Time Posted -->
+    <div>
+        <h4 class="font-bold text-gray-700 mb-3 flex items-center">
+            <i class="fas fa-clock mr-2 text-indigo-600"></i> Time Posted
+        </h4>
+        <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option>Any Time</option>
+            <option>Last 24 Hours</option>
+            <option>Last Week</option>
+            <option>Last Month</option>
+            <option>Last Year</option>
+        </select>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="pt-4 border-t border-gray-200 space-y-3">
+        <button class="filter-apply w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-medium">
+            Apply Filters
+        </button>
+        <button id="clear-filters" class="w-full border border-gray-300 py-2 rounded-lg hover:bg-gray-50 font-medium">
+            Clear All
+        </button>
+    </div>
+</div>
+
+</body>
+</html>

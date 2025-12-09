@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}{{ target_user.get_full_name|default:target_user.username }} - LearnHub{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Profile Header -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-8">
+            <!-- Profile Avatar -->
+            <div class="relative">
+                <div class="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-5xl font-bold shadow-lg">
+                    {{ target_user.first_name|default:target_user.email|slice:":2"|upper }}
+                </div>
+                <!-- Active Status Indicator -->
+                <div class="absolute bottom-4 right-4 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></div>
+            </div>
+
+            <!-- User Info -->
+            <div class="flex-1">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                            {{ target_user.get_full_name|default:target_user.username }}
+                        </h1>
+                        <div class="flex items-center gap-3">
+                            <p class="text-gray-600 text-lg">{{ target_user.email }}</p>
+                            {% if target_user.is_staff %}
+                            <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                                <i class="fas fa-shield-alt mr-1"></i> Staff
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3 mt-4 md:mt-0">
+                        {% if is_owner %}
+                        <a href="#"
+                           class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors duration-200 flex items-center">
+                            <i class="fas fa-edit mr-2"></i> Edit Profile
+                        </a>
+                        <form method="post" action="{% url 'logout' %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="px-6 py-3 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 flex items-center">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </form>
+                        {% else %}
+                        <button class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors duration-200 flex items-center">
+                            <i class="fas fa-user-plus mr-2"></i> Follow
+                        </button>
+                        <button class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors duration-200 flex items-center">
+                            <i class="fas fa-envelope mr-2"></i> Message
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                {% if profile.bio %}
+                <div class="mb-6">
+                    <p class="text-gray-700 text-lg leading-relaxed">{{ profile.bio }}</p>
+                </div>
+                {% elif is_owner %}
+                <div class="mb-6">
+                    <p class="text-gray-500 italic">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Add a bio to tell others about yourself
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- Skills & Interests -->
+                {% if profile.skills.all %}
+                <div class="mb-6">
+                    <h3 class="font-medium text-gray-700 mb-2">Skills & Interests</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for skill in profile.skills.all %}
+                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                            {{ skill.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Location & Website -->
+                <div class="flex flex-wrap gap-4 mb-6 text-gray-600">
+                    {% if profile.location %}
+                    <div class="flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2"></i>
+                        <span>{{ profile.location }}</span>
+                    </div>
+                    {% endif %}
+                    {% if profile.website %}
+                    <div class="flex items-center">
+                        <i class="fas fa-link mr-2"></i>
+                        <a href="{{ profile.website }}" target="_blank" class="hover:text-indigo-600">
+                            {{ profile.website|truncatechars:30 }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        <span>Joined {{ target_user.date_joined|date:"F Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-shadow duration-200">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mr-4">
+                    <i class="fas fa-book text-indigo-600 text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-gray-900">{{ shared_resources.count }}</div>
+                    <div class="text-gray-600 text-sm">Resources</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-shadow duration-200">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mr-4">
+                    <i class="fas fa-thumbs-up text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    {% with total_upvotes=0 %}
+                    {% for resource in shared_resources %}
+                    {% with total_upvotes=total_upvotes|add:resource.upvote_count %}
+                    {% endwith %}
+                    {% endfor %}
+                    <div class="text-3xl font-bold text-gray-900">{{ total_upvotes }}</div>
+                    {% endwith %}
+                    <div class="text-gray-600 text-sm">Upvotes</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-shadow duration-200">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mr-4">
+                    <i class="fas fa-comment text-purple-600 text-xl"></i>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-gray-900">
+                        {% comment %} You'll need to calculate comments count in the view {% endcomment %}
+                        0
+                    </div>
+                    <div class="text-gray-600 text-sm">Comments</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-shadow duration-200">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mr-4">
+                    <i class="fas fa-trophy text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    {% comment %} Calculate contribution score in view {% endcomment %}
+                    <div class="text-3xl font-bold text-gray-900">{{ shared_resources.count|add:0 }}</div>
+                    <div class="text-gray-600 text-sm">Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="mb-8">
+        <div class="border-b border-gray-200">
+            <nav class="flex flex-wrap gap-4 md:gap-8">
+                <button
+                    data-tab="resources"
+                    class="py-4 px-2 border-b-2 font-medium text-sm border-indigo-600 text-indigo-600 transition-colors duration-200"
+                >
+                    <i class="fas fa-book mr-2"></i> Resources
+                    <span class="ml-2 bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs">
+                        {{ shared_resources.count }}
+                    </span>
+                </button>
+                {% if is_owner %}
+                <button
+                    data-tab="saved"
+                    class="py-4 px-2 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                >
+                    <i class="fas fa-bookmark mr-2"></i> Saved
+                    <span class="ml-2 bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">
+                        0
+                    </span>
+                </button>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+
+    <!-- Tab Content: Resources -->
+    <div id="tab-resources" data-tab-content>
+        {% if shared_resources %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for resource in shared_resources %}
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-5">
+                <div class="flex justify-between items-start mb-3">
+                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">
+                        {{ resource.category.name|default:"Uncategorized" }}
+                    </span>
+                    {% if resource.is_approved %}
+                    <span class="text-green-600 text-sm">
+                        <i class="fas fa-check-circle"></i>
+                    </span>
+                    {% endif %}
+                </div>
+
+                <h3 class="font-bold text-lg mb-2 line-clamp-2">
+                    <a href="{% url 'resource_detail' resource_slug=resource.slug %}" class="hover:text-indigo-600">
+                        {{ resource.title }}
+                    </a>
+                </h3>
+
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {{ resource.description|truncatechars:100 }}
+                </p>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center">
+                            <i class="fas fa-thumbs-up mr-1"></i>
+                            {{ resource.upvote_count }}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-comment mr-1"></i>
+                            {{ resource.comments.count|default:0 }}
+                        </span>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded
+                        {% if resource.difficulty == 'B' %}bg-green-100 text-green-800
+                        {% elif resource.difficulty == 'I' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-red-100 text-red-800{% endif %}">
+                        {% if resource.difficulty == 'B' %}Beginner
+                        {% elif resource.difficulty == 'I' %}Intermediate
+                        {% else %}Advanced{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <i class="fas fa-book-open text-3xl text-gray-400"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">No resources shared yet</h3>
+            <p class="text-gray-600 mb-6">
+                {% if is_owner %}
+                Start sharing your first resource with the community
+                {% else %}
+                {{ target_user.first_name|default:target_user.email }} hasn't shared any resources yet
+                {% endif %}
+            </p>
+            {% if is_owner %}
+            <a href="{% url 'resource_create' %}"
+               class="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+                <i class="fas fa-plus mr-2"></i> Share Resource
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab Content: Saved (only for own profile) -->
+    {% if is_owner %}
+    <div id="tab-saved" data-tab-content class="hidden">
+        <div class="text-center py-12">
+            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <i class="fas fa-bookmark text-3xl text-gray-400"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Saved resources will appear here</h3>
+            <p class="text-gray-600 mb-6">
+                Bookmark resources you want to revisit later
+            </p>
+            <a href="{% url 'resource_list' %}"
+               class="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+                <i class="fas fa-search mr-2"></i> Browse Resources
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        document.querySelectorAll('[data-tab]').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+
+                // Update tab styles
+                document.querySelectorAll('[data-tab]').forEach(t => {
+                    t.classList.remove('border-indigo-600', 'text-indigo-600');
+                    t.classList.add('border-transparent', 'text-gray-500');
+                });
+                this.classList.remove('border-transparent', 'text-gray-500');
+                this.classList.add('border-indigo-600', 'text-indigo-600');
+
+                // Show corresponding content
+                document.querySelectorAll('[data-tab-content]').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            });
+        });
+    });
+</script>
+{% endblock %}

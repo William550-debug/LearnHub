@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<!-- Resource Card Component -->
+<div class="resource-card bg-white rounded-lg shadow-md overflow-hidden card-hover">
+    <!-- Resource Header -->
+    <div class="p-4 border-b border-gray-100">
+        <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center space-x-2">
+                <span class="text-xl">
+                    {% if resource.type == 'article' %}📰
+                    {% elif resource.type == 'video' %}🎥
+                    {% elif resource.type == 'course' %}📚
+                    {% elif resource.type == 'book' %}📖
+                    {% elif resource.type == 'tool' %}🛠️
+                    {% else %}📄{% endif %}
+                </span>
+                <span class="px-2 py-1 text-xs font-medium rounded-full {{ resource.category_class }}">
+                    {{ resource.category }}
+                </span>
+            </div>
+            <button class="save-btn text-gray-400 hover:text-red-500" title="Save resource">
+                <i class="far fa-bookmark"></i>
+            </button>
+        </div>
+
+        <!-- Resource Title -->
+        <h3 class="font-bold text-lg mb-2 line-clamp-2">
+            <a href="/resources/{{ resource.id }}/{{ resource.slug }}/" class="hover:text-indigo-600">
+                {{ resource.title }}
+            </a>
+        </h3>
+
+        <!-- Resource Description -->
+        <p class="text-gray-600 text-sm mb-3 line-clamp-3">
+            {{ resource.description }}
+        </p>
+    </div>
+
+    <!-- Resource Metadata -->
+    <div class="p-4">
+        <!-- Difficulty Badge -->
+        <div class="flex items-center mb-3">
+            {% if resource.difficulty == 'beginner' %}
+            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                🟢 Beginner
+            </span>
+            {% elif resource.difficulty == 'intermediate' %}
+            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                🟡 Intermediate
+            </span>
+            {% elif resource.difficulty == 'advanced' %}
+            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                🔴 Advanced
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Stats and Actions -->
+        <div class="flex justify-between items-center">
+            <!-- Stats -->
+            <div class="flex items-center space-x-4 text-gray-500">
+                <button class="upvote-btn flex items-center space-x-1 hover:text-indigo-600">
+                    <i class="far fa-thumbs-up"></i>
+                    <span class="upvote-count text-sm font-medium">{{ resource.upvotes }}</span>
+                </button>
+                <span class="flex items-center space-x-1">
+                    <i class="far fa-eye"></i>
+                    <span class="text-sm font-medium">{{ resource.views }}</span>
+                </span>
+                <span class="flex items-center space-x-1">
+                    <i class="far fa-comment"></i>
+                    <span class="text-sm font-medium">{{ resource.comments }}</span>
+                </span>
+            </div>
+
+            <!-- Creator Info -->
+            <div class="flex items-center">
+                <a href="/profile/{{ resource.creator.username }}/" class="flex items-center hover:text-indigo-600">
+                    <div class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
+                        <span class="text-indigo-600 text-xs font-medium">
+                            {{ resource.creator.initials }}
+                        </span>
+                    </div>
+                    <span class="text-sm">{{ resource.creator.name }}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

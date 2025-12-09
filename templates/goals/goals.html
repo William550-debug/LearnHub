@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+{% extends "base.html" %}
+{% block title %}Learning Goals - LearnHub{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Learning Goals</h1>
+            <p class="text-gray-600">Track and manage your learning objectives</p>
+        </div>
+
+        <!-- Create Goal Button -->
+        <button id="create-goal-btn" class="mt-4 md:mt-0 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-medium">
+            <i class="fas fa-plus mr-2"></i> Create New Goal
+        </button>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-lg bg-indigo-100 mr-4">
+                    <i class="fas fa-bullseye text-indigo-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ stats.total_goals }}</h3>
+                    <p class="text-gray-600">Total Goals</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-lg bg-green-100 mr-4">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ stats.completed_goals }}</h3>
+                    <p class="text-gray-600">Completed</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-lg bg-blue-100 mr-4">
+                    <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900">{{ stats.completion_rate }}%</h3>
+                    <p class="text-gray-600">Completion Rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="mb-6">
+        <div class="flex space-x-4 overflow-x-auto pb-2">
+            <button
+                data-filter="all"
+                class="px-4 py-2 rounded-lg font-medium bg-indigo-600 text-white"
+            >
+                All Goals ({{ stats.total_goals }})
+            </button>
+            <button
+                data-filter="active"
+                class="px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+                Active ({{ stats.active_goals }})
+            </button>
+            <button
+                data-filter="completed"
+                class="px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+                Completed ({{ stats.completed_goals }})
+            </button>
+            <button
+                data-filter="overdue"
+                class="px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+                Overdue ({{ stats.overdue_goals }})
+            </button>
+        </div>
+    </div>
+
+    <!-- Goals Grid -->
+    <div id="goals-container">
+        {% if goals.length > 0 %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for goal in goals %}
+            <div class="goal-card bg-white rounded-xl shadow-lg p-6 card-hover" data-status="{{ goal.status }}" data-due="{{ goal.due_date }}">
+                <!-- Goal Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center mr-3">
+                            <i class="fas fa-bullseye text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">{{ goal.title }}</h3>
+                            <div class="flex items-center text-sm text-gray-500 mt-1">
+                                <i class="far fa-calendar-alt mr-1"></i>
+                                <span>Due: {{ goal.due_date_formatted }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <span class="px-3 py-1 rounded-full text-sm font-medium
+                        {% if goal.status == 'completed' %}bg-green-100 text-green-800
+                        {% elif goal.status == 'active' %}bg-blue-100 text-blue-800
+                        {% elif goal.status == 'overdue' %}bg-red-100 text-red-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ goal.status_display }}
+                    </span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Progress</span>
+                        <span>{{ goal.progress }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="progress-bar h-2 rounded-full
+                            {% if goal.status == 'completed' %}bg-green-500
+                            {% elif goal.status == 'active' %}bg-indigo-500
+                            {% else %}bg-gray-400{% endif %}"
+                            style="width: {{ goal.progress }}%">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <p class="text-gray-600 mb-6 line-clamp-3">{{ goal.description }}</p>
+
+                <!-- Associated Resources -->
+                {% if goal.resources.length > 0 %}
+                <div class="mb-6">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Linked Resources</h4>
+                    <div class="space-y-2">
+                        {% for resource in goal.resources %}
+                        <a href="/resources/{{ resource.id }}/{{ resource.slug }}/" class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100">
+                            <span class="text-lg mr-3">{{ resource.icon }}</span>
+                            <span class="text-sm text-gray-700 truncate">{{ resource.title }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="flex justify-between pt-4 border-t border-gray-200">
+                    <div class="flex space-x-2">
+                        <button class="edit-goal-btn p-2 text-gray-500 hover:text-indigo-600" data-goal-id="{{ goal.id }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-goal-btn p-2 text-gray-500 hover:text-red-600" data-goal-id="{{ goal.id }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+
+                    {% if goal.status != 'completed' %}
+                    <button class="complete-goal-btn px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-medium text-sm" data-goal-id="{{ goal.id }}">
+                        Mark Complete
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-16">
+            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <i class="fas fa-bullseye text-3xl text-gray-400"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">No learning goals yet</h3>
+            <p class="text-gray-600 max-w-md mx-auto mb-8">
+                Create your first learning goal to track your progress and stay motivated on your learning journey.
+            </p>
+            <button id="create-first-goal-btn" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 font-medium">
+                <i class="fas fa-plus mr-2"></i> Create Your First Goal
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create/Edit Goal Modal -->
+<div id="goal-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-title" class="text-2xl font-bold text-gray-900">Create New Goal</h3>
+            <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+
+        <form id="goal-form">
+            <input type="hidden" id="goal-id" value="">
+
+            <!-- Goal Title -->
+            <div class="mb-6">
+                <label for="goal-title" class="block text-gray-700 font-medium mb-2">
+                    Goal Title *
+                </label>
+                <input
+                    type="text"
+                    id="goal-title"
+                    placeholder="e.g., Master React Hooks"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                >
+            </div>
+
+            <!-- Description -->
+            <div class="mb-6">
+                <label for="goal-description" class="block text-gray-700 font-medium mb-2">
+                    Description
+                </label>
+                <textarea
+                    id="goal-description"
+                    rows="3"
+                    placeholder="Describe what you want to achieve..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                ></textarea>
+            </div>
+
+            <!-- Target Date -->
+            <div class="mb-6">
+                <label for="goal-due-date" class="block text-gray-700 font-medium mb-2">
+                    Target Date *
+                </label>
+                <input
+                    type="date"
+                    id="goal-due-date"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                >
+            </div>
+
+            <!-- Initial Progress -->
+            <div class="mb-6">
+                <label for="goal-progress" class="block text-gray-700 font-medium mb-2">
+                    Initial Progress
+                </label>
+                <div class="flex items-center space-x-4">
+                    <input
+                        type="range"
+                        id="goal-progress"
+                        min="0"
+                        max="100"
+                        value="0"
+                        class="flex-1"
+                    >
+                    <span id="progress-value" class="text-gray-700 font-medium w-12">0%</span>
+                </div>
+            </div>
+
+            <!-- Link Resources -->
+            <div class="mb-8">
+                <label class="block text-gray-700 font-medium mb-3">
+                    Link Resources (Optional)
+                </label>
+                <div id="linked-resources" class="space-y-2 mb-3">
+                    <!-- Linked resources will appear here -->
+                </div>
+                <button type="button" id="add-resource-btn" class="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-plus mr-2"></i> Link Learning Resource
+                </button>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button type="button" id="cancel-goal" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                    Cancel
+                </button>
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-medium">
+                    Save Goal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resource Selection Modal -->
+<div id="resource-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900">Select Resources</h3>
+            <button id="close-resource-modal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Search -->
+        <div class="mb-6">
+            <input
+                type="text"
+                id="resource-search"
+                placeholder="Search your saved resources..."
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+        </div>
+
+        <!-- Resource List -->
+        <div id="resource-list" class="max-h-96 overflow-y-auto space-y-3">
+            <!-- Resources will be loaded here -->
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <button id="done-selecting" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-medium">
+                Done
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sample goals data
+    const goals = [
+        {
+            id: 1,
+            title: "Master React Hooks",
+            description: "Learn useState, useEffect, useContext, and custom hooks with practical examples.",
+            due_date: "2024-12-20",
+            due_date_formatted: "Dec 20, 2024",
+            progress: 65,
+            status: "active",
+            status_display: "In Progress",
+            resources: [
+                { id: 3, slug: "react-hooks-explained", title: "React Hooks Explained Simply", icon: "🎥" },
+                { id: 15, slug: "advanced-react-patterns", title: "Advanced React Patterns", icon: "📚" }
+            ]
+        },
+        {
+            id: 2,
+            title: "Learn TypeScript Basics",
+            description: "Understand TypeScript fundamentals including types, interfaces, and generics.",
+            due_date: "2024-12-10",
+            due_date_formatted: "Dec 10, 2024",
+            progress: 100,
+            status: "completed",
+            status_display: "Completed",
+            resources: [
+                { id: 42, slug: "typescript-generics", title: "TypeScript Generics Tutorial", icon: "📰" }
+            ]
+        },
+        {
+            id: 3,
+            title: "Build a Full-Stack App",
+            description: "Create a complete web application with React frontend and Node.js backend.",
+            due_date: "2025-01-15",
+            due_date_formatted: "Jan 15, 2025",
+            progress: 0,
+            status: "not_started",
+            status_display: "Not Started",
+            resources: []
+        }
+    ];
+
+    // Filter functionality
+    document.querySelectorAll('[data-filter]').forEach(filterBtn => {
+        filterBtn.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+
+            // Update active filter
+            document.querySelectorAll('[data-filter]').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            this.classList.remove('bg-gray-100', 'text-gray-700');
+            this.classList.add('bg-indigo-600', 'text-white');
+
+            // Filter goals
+            const goalCards = document.querySelectorAll('.goal-card');
+            goalCards.forEach(card => {
+                const status = card.getAttribute('data-status');
+                const dueDate = new Date(card.getAttribute('data-due'));
+                const today = new Date();
+
+                let shouldShow = false;
+
+                switch(filter) {
+                    case 'all':
+                        shouldShow = true;
+                        break;
+                    case 'active':
+                        shouldShow = status === 'active';
+                        break;
+                    case 'completed':
+                        shouldShow = status === 'completed';
+                        break;
+                    case 'overdue':
+                        shouldShow = status !== 'completed' && dueDate < today;
+                        break;
+                }
+
+                if (shouldShow) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Show empty state if no goals match filter
+            const visibleGoals = Array.from(goalCards).filter(card =>
+                card.style.display !== 'none'
+            );
+
+            const emptyState = document.querySelector('.text-center.py-16');
+            if (emptyState) {
+                if (visibleGoals.length === 0) {
+                    emptyState.style.display = 'block';
+                } else {
+                    emptyState.style.display = 'none';
+                }
+            }
+        });
+    });
+
+    // Goal Modal Functionality
+    const createGoalBtn = document.getElementById('create-goal-btn');
+    const createFirstGoalBtn = document.getElementById('create-first-goal-btn');
+    const goalModal = document.getElementById('goal-modal');
+    const closeModalBtn = document.getElementById('close-modal');
+    const cancelGoalBtn = document.getElementById('cancel-goal');
+    const modalTitle = document.getElementById('modal-title');
+    const goalForm = document.getElementById('goal-form');
+    const goalIdInput = document.getElementById('goal-id');
+    const goalTitleInput = document.getElementById('goal-title');
+    const goalDescriptionInput = document.getElementById('goal-description');
+    const goalDueDateInput = document.getElementById('goal-due-date');
+    const goalProgressInput = document.getElementById('goal-progress');
+    const progressValue = document.getElementById('progress-value');
+
+    // Set min date to today
+    const today = new Date().toISOString().split('T')[0];
+    goalDueDateInput.min = today;
+
+    // Update progress value display
+    goalProgressInput.addEventListener('input', function() {
+        progressValue.textContent = `${this.value}%`;
+    });
+
+    // Open modal for creating new goal
+    function openCreateModal() {
+        modalTitle.textContent = 'Create New Goal';
+        goalIdInput.value = '';
+        goalTitleInput.value = '';
+        goalDescriptionInput.value = '';
+        goalDueDateInput.value = '';
+        goalProgressInput.value = '0';
+        progressValue.textContent = '0%';
+        document.getElementById('linked-resources').innerHTML = '';
+        goalModal.classList.remove('hidden');
+    }
+
+    // Open modal for editing goal
+    function openEditModal(goalId) {
+        const goal = goals.find(g => g.id === parseInt(goalId));
+        if (!goal) return;
+
+        modalTitle.textContent = 'Edit Goal';
+        goalIdInput.value = goal.id;
+        goalTitleInput.value = goal.title;
+        goalDescriptionInput.value = goal.description;
+        goalDueDateInput.value = goal.due_date;
+        goalProgressInput.value = goal.progress;
+        progressValue.textContent = `${goal.progress}%`;
+
+        // Populate linked resources
+        const linkedResourcesContainer = document.getElementById('linked-resources');
+        linkedResourcesContainer.innerHTML = goal.resources.map(resource => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-resource-id="${resource.id}">
+                <div class="flex items-center">
+                    <span class="text-lg mr-3">${resource.icon}</span>
+                    <span class="text-gray-700">${resource.title}</span>
+                </div>
+                <button type="button" class="remove-resource text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+
+        goalModal.classList.remove('hidden');
+    }
+
+    // Event listeners for opening modal
+    createGoalBtn?.addEventListener('click', openCreateModal);
+    createFirstGoalBtn?.addEventListener('click', openCreateModal);
+
+    // Close modal
+    closeModalBtn.addEventListener('click', () => goalModal.classList.add('hidden'));
+    cancelGoalBtn.addEventListener('click', () => goalModal.classList.add('hidden'));
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === goalModal) {
+            goalModal.classList.add('hidden');
+        }
+        if (e.target === resourceModal) {
+            resourceModal.classList.add('hidden');
+        }
+    });
+
+    // Edit goal buttons
+    document.querySelectorAll('.edit-goal-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const goalId = this.getAttribute('data-goal-id');
+            openEditModal(goalId);
+        });
+    });
+
+    // Complete goal buttons
+    document.querySelectorAll('.complete-goal-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const goalId = this.getAttribute('data-goal-id');
+            if (confirm('Mark this goal as complete?')) {
+                // Update UI
+                const card = this.closest('.goal-card');
+                card.querySelector('.progress-bar').style.width = '100%';
+                card.querySelector('.progress-bar').classList.remove('bg-indigo-500');
+                card.querySelector('.progress-bar').classList.add('bg-green-500');
+                card.querySelector('.text-sm.text-gray-600 span:last-child').textContent = '100%';
+
+                const badge = card.querySelector('span.bg-blue-100');
+                if (badge) {
+                    badge.classList.remove('bg-blue-100', 'text-blue-800');
+                    badge.classList.add('bg-green-100', 'text-green-800');
+                    badge.textContent = 'Completed';
+                }
+
+                this.remove();
+
+                // Show success message
+                showToast('Goal marked as complete!', 'success');
+            }
+        });
+    });
+
+    // Delete goal buttons
+    document.querySelectorAll('.delete-goal-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const goalId = this.getAttribute('data-goal-id');
+            if (confirm('Are you sure you want to delete this goal?')) {
+                // Remove from UI
+                this.closest('.goal-card').remove();
+
+                // Show success message
+                showToast('Goal deleted successfully', 'success');
+            }
+        });
+    });
+
+    // Resource Modal Functionality
+    const resourceModal = document.getElementById('resource-modal');
+    const addResourceBtn = document.getElementById('add-resource-btn');
+    const closeResourceModalBtn = document.getElementById('close-resource-modal');
+    const doneSelectingBtn = document.getElementById('done-selecting');
+
+    addResourceBtn?.addEventListener('click', () => {
+        resourceModal.classList.remove('hidden');
+        loadResources();
+    });
+
+    closeResourceModalBtn.addEventListener('click', () => resourceModal.classList.add('hidden'));
+    doneSelectingBtn.addEventListener('click', () => resourceModal.classList.add('hidden'));
+
+    function loadResources() {
+        // In a real app, this would be an API call
+        const resources = [
+            { id: 1, title: "Complete React Hooks Tutorial", icon: "🎥" },
+            { id: 2, title: "TypeScript Fundamentals", icon: "📚" },
+            { id: 3, title: "Node.js Performance Guide", icon: "📰" },
+            { id: 4, title: "CSS Grid Mastery", icon: "📖" },
+            { id: 5, title: "Docker for Beginners", icon: "🛠️" }
+        ];
+
+        const resourceList = document.getElementById('resource-list');
+        resourceList.innerHTML = resources.map(resource => `
+            <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <input type="checkbox" class="mr-3 text-indigo-600 resource-checkbox" value="${resource.id}">
+                <span class="text-xl mr-3">${resource.icon}</span>
+                <span class="flex-1">${resource.title}</span>
+            </label>
+        `).join('');
+    }
+
+    // Form submission
+    goalForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const goalId = goalIdInput.value;
+        const title = goalTitleInput.value.trim();
+        const description = goalDescriptionInput.value.trim();
+        const dueDate = goalDueDateInput.value;
+        const progress = parseInt(goalProgressInput.value);
+
+        if (!title || !dueDate) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+        submitBtn.disabled = true;
+
+        // Simulate API call
+        setTimeout(() => {
+            if (goalId) {
+                // Update existing goal
+                showToast('Goal updated successfully!', 'success');
+            } else {
+                // Create new goal
+                showToast('Goal created successfully!', 'success');
+            }
+
+            goalModal.classList.add('hidden');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+
+            // In a real app, you would refresh the goals list or update the UI
+            setTimeout(() => location.reload(), 1000);
+        }, 1500);
+    });
+
+    // Toast notification function
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+            type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+            'bg-blue-100 text-blue-800 border border-blue-200'
+        }`;
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} mr-3"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}
+
+</body>
+</html>

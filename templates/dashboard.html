@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - LearnHub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Welcome Header -->
+    <div class="mb-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back,
+                <span class="text-indigo-600">{{ user.first_name|default:user.email }}</span>! 👋</h1>
+            <p class="text-gray-600">Here's your learning overview for today.</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Learning Time -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-lg bg-blue-100">
+                    <i class="fas fa-clock text-blue-600 text-xl"></i>
+                </div>
+                {% if learning_time_change > 0 %}
+                <span class="text-sm font-medium text-green-600">+{{ learning_time_change }}%</span>
+                {% elif learning_time_change < 0 %}
+                <span class="text-sm font-medium text-red-600">{{ learning_time_change }}%</span>
+                {% endif %}
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ learning_time|default:"0" }} hrs</h3>
+            <p class="text-gray-600">Learning time this month</p>
+        </div>
+
+        <!-- Resources Completed -->
+         <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-lg bg-green-100">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ resources_completed|default:"0" }}</h3>
+            <p class="text-gray-600">Resources completed</p>
+        </div>
+
+        <!-- Goals Achieved -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-lg bg-purple-100">
+                    <i class="fas fa-bullseye text-purple-600 text-xl"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ goals_achieved|default:"0" }}</h3>
+            <p class="text-gray-600">Goals achieved</p>
+        </div>
+
+        <!-- Streak -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-lg bg-yellow-100">
+                    <i class="fas fa-fire text-yellow-600 text-xl"></i>
+                </div>
+                {% if streak_days > 0 %}
+                <span class="text-sm font-medium text-green-600">🔥 {{ streak_days }} days</span>
+                {% endif %}
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ streak_days|default:"0" }}</h3>
+            <p class="text-gray-600">Current learning streak</p>
+        </div>
+
+    </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column -->
+        <div class="lg:col-span-2 space-y-8">
+                        <!-- Recent Activity -->
+                <!-- Your Recent Resources Section -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-900">Your Resources</h2>
+                    <a href="{% url 'resource_create' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                        <i class="fas fa-plus mr-1"></i> Share New
+                    </a>
+                </div>
+
+                <!-- Resource Stats -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-2xl font-bold text-gray-900">{{ total_resources }}</div>
+                        <div class="text-sm text-gray-600">Total</div>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-700">{{ approved_resources }}</div>
+                        <div class="text-sm text-green-600">Approved</div>
+                    </div>
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-700">{{ total_upvotes_received }}</div>
+                        <div class="text-sm text-blue-600">Upvotes</div>
+                    </div>
+                </div>
+
+                {% if recent_resources %}
+                <div class="space-y-4">
+                    {% for resource in recent_resources %}
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-150">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <!-- Approval Status -->
+                                    {% if resource.is_approved %}
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium flex items-center">
+                                        <i class="fas fa-check-circle mr-1"></i> Approved
+                                    </span>
+                                    {% else %}
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium flex items-center">
+                                        <i class="fas fa-clock mr-1"></i> Pending Approval
+                                    </span>
+                                    {% endif %}
+
+                                    <!-- Category -->
+                                    <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-xs font-medium">
+                                        {{ resource.category.name|default:"Uncategorized" }}
+                                    </span>
+
+                                    <!-- Difficulty -->
+                                    <span class="text-xs px-2 py-1 rounded
+                                        {% if resource.difficulty == 'B' %}bg-green-100 text-green-800
+                                        {% elif resource.difficulty == 'I' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {% if resource.difficulty == 'B' %}Beginner
+                                        {% elif resource.difficulty == 'I' %}Intermediate
+                                        {% else %}Advanced{% endif %}
+                                    </span>
+                                </div>
+
+                                <!-- Resource Title -->
+                                <h3 class="font-medium text-gray-900 mb-1">
+                                    <a href="{% url 'resource_detail' resource_slug=resource.slug %}"
+                                       class="hover:text-indigo-600">
+                                        {{ resource.title }}
+                                    </a>
+                                </h3>
+
+                                <!-- Description -->
+                                <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                                    {{ resource.description|truncatechars:150 }}
+                                </p>
+
+                                <!-- Tags -->
+                                {% if resource.tags.all %}
+                                <div class="mb-3">
+                                    {% for tag in resource.tags.all|slice:":3" %}
+                                    <span class="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs mr-1 mb-1">
+                                        {{ tag.name }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if resource.tags.all|length > 3 %}
+                                    <span class="inline-block text-xs text-gray-500">
+                                        +{{ resource.tags.all|length|add:"-3" }} more
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Stats and Actions -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span class="flex items-center">
+                                            <i class="fas fa-thumbs-up mr-1"></i>
+                                            {{ resource.upvote_count }}
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-comment mr-1"></i>
+                                            {{ resource.comments.count }}
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-calendar-alt mr-1"></i>
+                                            {{ resource.created_at|date:"M d" }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex space-x-2">
+                                        <a href="{% url 'resource_detail' resource_slug=resource.slug %}"
+                                           class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                                            View
+                                        </a>
+                                        {% if not resource.is_approved %}
+                                        <span class="text-xs text-gray-500 italic">(Pending)</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- View All Link -->
+                <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+                    <a href="{% url 'user_profile' user_identifier=user.email %}"
+                       class="text-indigo-600 hover:text-indigo-800 font-medium">
+                        <i class="fas fa-external-link-alt mr-2"></i>
+                        View all your resources in profile →
+                    </a>
+                </div>
+
+                {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-cloud-upload-alt text-2xl text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No resources yet</h3>
+                    <p class="text-gray-600 mb-4 max-w-md mx-auto">
+                        Start sharing learning resources with the community. It's a great way to contribute and get upvotes!
+                    </p>
+                    <a href="{% url 'resource_create' %}"
+                       class="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium">
+                        <i class="fas fa-plus mr-2"></i> Share Your First Resource
+                    </a>
+
+                    <!-- Tips -->
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100 text-left max-w-md mx-auto">
+                        <p class="text-sm text-blue-800 font-medium mb-2 flex items-center">
+                            <i class="fas fa-lightbulb mr-2"></i> What to share?
+                        </p>
+                        <ul class="text-sm text-blue-700 list-disc pl-4 space-y-1">
+                            <li>Tutorials that helped you learn something new</li>
+                            <li>Useful tools or libraries</li>
+                            <li>Practice projects or coding challenges</li>
+                            <li>Video courses or documentation</li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Learning Goals -->
+            {% if learning_goals %}
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-900">Your Learning Goals</h2>
+                </div>
+
+                <div class="space-y-6">
+                    {% for goal in learning_goals %}
+                    <div class="border-l-4
+                        {% if goal.status == 'completed' %}border-green-500
+                        {% elif goal.status == 'in_progress' %}border-blue-500
+                        {% else %}border-yellow-500{% endif %}
+                        pl-4 py-1">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-gray-900">{{ goal.title }}</h3>
+                                {% if goal.due_date %}
+                                <p class="text-sm text-gray-600">Due: {{ goal.due_date|date:"M d, Y" }}</p>
+                                {% endif %}
+                            </div>
+                            <span class="px-3 py-1
+                                {% if goal.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif goal.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}
+                                rounded-full text-sm font-medium">
+                                {{ goal.status|title }}
+                            </span>
+                        </div>
+                        {% if goal.description %}
+                        <p class="text-gray-600 mb-3">{{ goal.description|truncatechars:100 }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+          <!-- Right Column -->
+        <div class="space-y-8">
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
+
+                <div class="space-y-4">
+                    <a href="{% url 'resource_create' %}" class="flex items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+                        <div class="w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center mr-4">
+                            <i class="fas fa-plus text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Add Resource</h3>
+                            <p class="text-sm text-gray-600">Share a learning resource</p>
+                        </div>
+                    </a>
+
+                    <a href="{% url 'resource_list' %}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
+                        <div class="w-12 h-12 rounded-lg bg-green-600 flex items-center justify-center mr-4">
+                            <i class="fas fa-search text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Browse Resources</h3>
+                            <p class="text-sm text-gray-600">Discover new content</p>
+                        </div>
+                    </a>
+
+                    <a href="{% url 'user_profile' user.email %}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                        <div class="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center mr-4">
+                            <i class="fas fa-user text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Your Profile</h3>
+                            <p class="text-sm text-gray-600">View and edit profile</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recommended Resources -->
+            {% if recommended_resources %}
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Recommended Resources</h2>
+
+                <div class="space-y-4">
+                    {% for resource in recommended_resources %}
+                    <a href="{% url 'resource_detail' resource.slug %}"
+                       class="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <div class="flex items-start">
+                            <span class="text-2xl mr-3">{{ resource.icon|default:"📚" }}</span>
+                            <div>
+                                <h4 class="font-medium text-gray-900 line-clamp-2">{{ resource.title }}</h4>
+                                <div class="flex items-center mt-2 text-sm text-gray-500">
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs mr-2">
+                                        {{ resource.category.name|default:"General" }}
+                                    </span>
+                                    <span>{{ resource.difficulty_icon|default:"⚪" }} {{ resource.difficulty|title }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-6 text-center">
+                    <a href="{% url 'resource_list' %}" class="text-indigo-600 hover:text-indigo-700 font-medium">
+                        Browse All Resources →
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Profile Summary -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Your Profile</h2>
+                <div class="flex items-center mb-4">
+                    <div class="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
+                        <span class="text-indigo-600 font-medium text-xl">
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper|default:"" }}
+                        </span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900">{{ user.get_full_name|default:user.email }}</h3>
+                        <p class="text-gray-600 text-sm">Member since {{ user.date_joined|date:"M Y" }}</p>
+                    </div>
+                </div>
+
+                {% if profile.bio %}
+                <div class="mt-4">
+                    <p class="text-gray-700 text-sm">{{ profile.bio|truncatechars:100 }}</p>
+                </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <a href="{% url 'user_profile' user.email %}" class="block w-full text-center bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition">
+                        View Full Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+      </div>
+</div>
+
+<script>
+    // Animate progress bars on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.progress-bar');
+
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 300);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+{% load humanize %}
+{% if page_obj.has_other_pages %}
+<nav class="flex items-center space-x-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+       class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50">
+        <i class="fas fa-chevron-left"></i>
+    </a>
+    {% else %}
+    <button disabled class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    {% endif %}
+
+    <div id="page-numbers" class="flex items-center space-x-2">
+        {% for i in page_range %}
+            {% if page_obj.number == i %}
+            <span class="w-10 h-10 flex items-center justify-center rounded-lg bg-indigo-600 text-white font-medium">
+                {{ i }}
+            </span>
+            {% elif i == page_obj.paginator.ELLIPSIS %}
+            <span class="px-2 text-gray-500">...</span>
+            {% else %}
+            <a href="?page={{ i }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+               class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">
+                {{ i }}
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+       class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50">
+        <i class="fas fa-chevron-right"></i>
+    </a>
+    {% else %}
+    <button disabled class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+    {% endif %}
+</nav>
+{% endif %}
+
+</body>
+</html>
