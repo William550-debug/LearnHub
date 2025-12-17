@@ -1,0 +1,128 @@
+{% load widget_tweaks %}
+
+<div class="space-y-6">
+
+    <div class="mb-6">
+        <label for="id_title_{{ resource_type }}" class="block text-gray-700 font-medium mb-2">
+            Title *
+        </label>
+        {% render_field form.title id="id_title_{{ resource_type }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" placeholder="Enter resource title" %}
+        {% for error in form.title.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="mb-6">
+        <label for="id_url_{{ resource_type }}" class="block text-gray-700 font-medium mb-2">
+            External URL (Optional)
+        </label>
+        {% render_field form.url id="id_url_{{ resource_type }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" placeholder="e.g., https://example.com" %}
+        {% for error in form.url.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="mb-6">
+        <label for="id_description_{{ resource_type }}" class="block text-gray-700 font-medium mb-2">
+            Description *
+        </label>
+        {% render_field form.description id="id_description_{{ resource_type }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" rows="4" placeholder="Describe the resource, what will learners gain?" %}
+        {% for error in form.description.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+        <div class="flex justify-between mt-1">
+            <p class="text-sm text-gray-500">Be detailed and helpful</p>
+            <span id="description-count-{{ resource_type }}" class="text-sm text-gray-500">0/1000 characters</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+            <label for="id_category_{{ resource_type }}" class="block text-gray-700 font-medium mb-2">
+                Category *
+            </label>
+            {% render_field form.category id="id_category_{{ resource_type }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" %}
+            {% for error in form.category.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <div></div>
+    </div>
+
+    <div class="mb-6">
+        <label class="block text-gray-700 font-medium mb-2">
+            Difficulty Level *
+        </label>
+        <div class="grid grid-cols-3 gap-2" id="difficulty-group-{{ resource_type }}">
+            {% with difficulty_choices=form.fields.difficulty.choices %}
+            {% for value, label in difficulty_choices %}
+                {% comment %} Note: The label slicing and emojis rely on specific content structure not fully available here, but the structure is preserved. {% endcomment %}
+                <label class="difficulty-option flex flex-col items-center p-3 border border-gray-300 rounded-lg cursor-pointer transition-all hover:border-gray-400
+                       {% if form.difficulty.value == value %}border-2 border-indigo-400 bg-indigo-50 shadow-md{% endif %}"
+                       data-value="{{ value }}">
+                    <input type="radio" name="difficulty" value="{{ value }}" class="sr-only"
+                           {% if form.difficulty.value == value %}checked{% endif %}>
+                    <span class="text-lg mb-1">
+                        {# Display Icon based on value #}
+                        {% if value == 'B' %}🟢{% elif value == 'I' %}🟡{% else %}🔴{% endif %}
+                    </span>
+                    <span class="font-medium text-sm">{{ label }}</span>
+                    <span class="text-xs text-gray-500 text-center mt-1">
+                        {# Display description based on value #}
+                        {% if value == 'B' %}For beginners{% elif value == 'I' %}Some experience needed{% else %}Advanced topics{% endif %}
+                    </span>
+                </label>
+            {% endfor %}
+            {% endwith %}
+        </div>
+        {% for error in form.difficulty.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="mb-6">
+        <label for="tags-input-{{ resource_type }}" class="block text-gray-700 font-medium mb-2">
+            Tags (Optional, max 5)
+        </label>
+        <div class="relative">
+            <input type="text"
+                   id="tags-input-{{ resource_type }}"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+                   placeholder="Add tags separated by commas (e.g., python, django, webdev)"
+                   autocomplete="off">
+
+            <input type="hidden"
+                   name="tags_string"
+                   id="tags-value-{{ resource_type }}"
+                   value="{{ form.tags_string.value|default:'' }}">
+
+            <div id="tag-suggestions-{{ resource_type }}" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                </div>
+        </div>
+
+        <div id="selected-tags-{{ resource_type }}" class="flex flex-wrap gap-2 mt-3">
+            {% if form.tags_string.value %}
+                {% with tags_list=form.tags_string.value.split|join:"," %}
+                    {% for tag in tags_list %}
+                        {% if tag.strip %}
+                            <span class="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm mr-2 mb-2">
+                                {{ tag.strip }}
+                                <button type="button" class="ml-2 text-indigo-600 hover:text-indigo-800 remove-tag">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </span>
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
+            {% endif %}
+        </div>
+        <p class="text-sm text-gray-500 mt-1">Add relevant tags to help others find your resource (max 5)</p>
+
+        {% for error in form.tags_string.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+
+</div>

@@ -1,0 +1,220 @@
+<!-- templates/resources/partials/_interaction_panel.html -->
+<div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-200 sticky top-6">
+    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+        <i class="fas fa-heart text-red-500 mr-2"></i> Interact with this Resource
+    </h3>
+
+    <div class="space-y-4">
+        <!-- Upvote Button -->
+        <button type="button"
+                class="interaction-btn w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors {% if user_interaction.upvoted %}border-red-300 bg-red-50{% else %}border-gray-300{% endif %}"
+                data-interaction-type="upvote"
+                data-resource-id="{{ resource.pk }}">
+            <div class="flex items-center">
+                <i class="fas fa-arrow-up text-lg mr-3 {% if user_interaction.upvoted %}text-red-600{% else %}text-gray-400{% endif %}"></i>
+                <div>
+                    <div class="font-medium">Upvote</div>
+                    <div class="text-sm text-gray-500">Show your appreciation</div>
+                </div>
+            </div>
+            <div class="flex items-center">
+                <span class="text-lg font-bold mr-2 {% if user_interaction.upvoted %}text-red-600{% else %}text-gray-700{% endif %}">
+                    {{ resource.upvote_count }}
+                </span>
+                <i class="fas {% if user_interaction.upvoted %}fa-check text-red-600{% else %}fa-plus text-gray-400{% endif %}"></i>
+            </div>
+        </button>
+
+        <!-- Save Button -->
+        <button type="button"
+                class="interaction-btn w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors {% if user_interaction.saved %}border-blue-300 bg-blue-50{% else %}border-gray-300{% endif %}"
+                data-interaction-type="save"
+                data-resource-id="{{ resource.pk }}">
+            <div class="flex items-center">
+                <i class="fas fa-bookmark text-lg mr-3 {% if user_interaction.saved %}text-blue-600{% else %}text-gray-400{% endif %}"></i>
+                <div>
+                    <div class="font-medium">Save</div>
+                    <div class="text-sm text-gray-500">Bookmark for later</div>
+                </div>
+            </div>
+            <div class="flex items-center">
+                <span class="text-lg font-bold mr-2 {% if user_interaction.saved %}text-blue-600{% else %}text-gray-700{% endif %}">
+                    {{ resource.saved_count }}
+                </span>
+                <i class="fas {% if user_interaction.saved %}fa-check text-blue-600{% else %}fa-plus text-gray-400{% endif %}"></i>
+            </div>
+        </button>
+
+        <!-- Complete Button (for courses) -->
+        {% if resource.get_resource_type == 'Course' %}
+        <button type="button"
+                class="interaction-btn w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors {% if user_interaction.completed %}border-green-300 bg-green-50{% else %}border-gray-300{% endif %}"
+                data-interaction-type="complete"
+                data-resource-id="{{ resource.pk }}">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-lg mr-3 {% if user_interaction.completed %}text-green-600{% else %}text-gray-400{% endif %}"></i>
+                <div>
+                    <div class="font-medium">Complete</div>
+                    <div class="text-sm text-gray-500">Mark as finished</div>
+                </div>
+            </div>
+            <div class="flex items-center">
+                <i class="fas {% if user_interaction.completed %}fa-check text-green-600{% else %}fa-plus text-gray-400{% endif %}"></i>
+            </div>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Share Section -->
+    <div class="mt-6 pt-6 border-t border-gray-200">
+        <h4 class="font-medium text-gray-700 mb-3">Share this resource</h4>
+        <div class="flex space-x-2">
+            <button type="button" class="share-btn flex-1 p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700" data-platform="copy">
+                <i class="fas fa-link"></i>
+                <span class="text-sm ml-1">Copy Link</span>
+            </button>
+            <button type="button" class="share-btn flex-1 p-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-700" data-platform="twitter">
+                <i class="fab fa-twitter"></i>
+                <span class="text-sm ml-1">Twitter</span>
+            </button>
+            <button type="button" class="share-btn flex-1 p-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white" data-platform="linkedin">
+                <i class="fab fa-linkedin"></i>
+                <span class="text-sm ml-1">LinkedIn</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    const interactionUrl = "{% url 'resource_interaction' %}";
+
+    // Handle interaction buttons
+    document.querySelectorAll('.interaction-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const resourceId = this.getAttribute('data-resource-id');
+            const interactionType = this.getAttribute('data-interaction-type');
+
+            // Disable button during request
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            this.disabled = true;
+
+            // Send AJAX request
+            fetch(interactionUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: new URLSearchParams({
+                    'resource_id': resourceId,
+                    'interaction_type': interactionType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update UI based on response
+                    if (interactionType === 'upvote') {
+                        // Update upvote count
+                        const countSpan = this.querySelector('.text-lg.font-bold');
+                        if (countSpan) {
+                            countSpan.textContent = data.upvote_count;
+                            countSpan.className = data.new_state ?
+                                'text-lg font-bold mr-2 text-red-600' :
+                                'text-lg font-bold mr-2 text-gray-700';
+                        }
+
+                        // Update icon
+                        const icon = this.querySelector('.fa-arrow-up');
+                        if (icon) {
+                            icon.className = data.new_state ?
+                                'fas fa-arrow-up text-lg mr-3 text-red-600' :
+                                'fas fa-arrow-up text-lg mr-3 text-gray-400';
+                        }
+
+                        // Update check icon
+                        const checkIcon = this.querySelector('.fa-plus, .fa-check');
+                        if (checkIcon) {
+                            checkIcon.className = data.new_state ?
+                                'fas fa-check text-red-600' :
+                                'fas fa-plus text-gray-400';
+                        }
+
+                        // Update button style
+                        this.className = data.new_state ?
+                            'interaction-btn w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors border-red-300 bg-red-50' :
+                            'interaction-btn w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors border-gray-300';
+
+                    } else if (interactionType === 'save') {
+                        // Similar updates for save button
+                        const countSpan = this.querySelector('.text-lg.font-bold');
+                        if (countSpan) {
+                            countSpan.textContent = data.saved_count;
+                            countSpan.className = data.new_state ?
+                                'text-lg font-bold mr-2 text-blue-600' :
+                                'text-lg font-bold mr-2 text-gray-700';
+                        }
+
+                        // Update button style
+                        this.className = data.new_state ?
+                            'interaction-btn w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors border-blue-300 bg-blue-50' :
+                            'interaction-btn w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors border-gray-300';
+                    }
+
+                    // Show success message
+                    const message = data.new_state ?
+                        `Resource ${interactionType}d!` :
+                        `${interactionType.charAt(0).toUpperCase() + interactionType.slice(1)} removed`;
+
+                    // You could add a toast notification here
+                    console.log(message);
+
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                // Restore button
+                this.innerHTML = originalHTML;
+                this.disabled = false;
+            });
+        });
+    });
+
+    // Handle share buttons
+    document.querySelectorAll('.share-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const platform = this.getAttribute('data-platform');
+            const url = window.location.href;
+            const title = document.title;
+
+            if (platform === 'copy') {
+                navigator.clipboard.writeText(url)
+                    .then(() => {
+                        // Show copied message
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check"></i> <span class="text-sm ml-1">Copied!</span>';
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        alert('Failed to copy link. Please copy manually.');
+                    });
+            } else if (platform === 'twitter') {
+                window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+            } else if (platform === 'linkedin') {
+                window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+            }
+        });
+    });
+});
+</script>

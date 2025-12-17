@@ -1,218 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
 {% extends "base.html" %}
 {% block title %}Browse Resources - LearnHub{% endblock %}
-{% load  humanize %}
+{% load humanize %}
 
 {% block extra_css %}
 <style>
-    .resource-card {
-        transition: all 0.3s ease;
-    }
-
-    .resource-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.1), 0 10px 10px -5px rgba(79, 70, 229, 0.04);
-    }
-
-    .filter-section {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease-out;
-    }
-
-    .filter-section.active {
-        max-height: 500px;
-    }
-
-    .pagination-link.active {
-        background-color: #4F46E5;
-        color: white;
-    }
-
-    .skeleton-loading {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: .5;
-        }
-    }
+    .resource-card { transition: all 0.3s ease; }
+    .resource-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(79,70,229,0.1); }
+    .pagination-link.active { background-color: #4F46E5; color: white; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Page Header -->
+    {% csrf_token %}
     <div class="mb-8">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Browse Learning Resources</h1>
-        <p class="text-lg text-gray-600">Discover tutorials, courses, articles, and tools shared by our community</p>
-
-        <!-- Quick Stats -->
-        <div class="mt-6 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-            <div class="flex items-center">
-                <i class="fas fa-book mr-2"></i>
-                <span><span id="total-resources">1,247</span> resources available</span>
-            </div>
-            <div class="flex items-center">
-                <i class="fas fa-users mr-2"></i>
-                <span>Shared by 850+ contributors</span>
-            </div>
-            <div class="flex items-center">
-                <i class="fas fa-fire mr-2"></i>
-                <span>Updated daily</span>
-            </div>
-        </div>
+        <p class="text-lg text-gray-600">Discover tutorials, courses, and articles shared by our community</p>
     </div>
 
-    <!-- Main Content Area -->
     <div class="flex flex-col lg:flex-row gap-8">
-        <!-- Mobile Filter Toggle -->
-        <div class="lg:hidden">
-            <button id="mobile-filter-toggle" class="w-full flex items-center justify-between p-4 bg-white border border-gray-300 rounded-lg shadow-sm">
-                <span class="font-medium text-gray-700">
-                    <i class="fas fa-filter mr-2"></i> Filters & Options
-                </span>
-                <i class="fas fa-chevron-down text-gray-500"></i>
-            </button>
-        </div>
-
-        <!-- Filters Sidebar -->
         <div id="filters-sidebar" class="lg:w-1/4">
-            <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24">
-                <!-- Search Within Results -->
+            <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24 border border-gray-200">
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Search within results</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search results</label>
                     <div class="relative">
-                        <input type="text" id="search-within" placeholder="Type to search..."
-                               class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                        <input type="text" id="search-within" value="{{ current_query }}" placeholder="Search title or tags..."
+                               class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                     </div>
                 </div>
 
-                <!-- Sort Options -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
-                    <select id="sort-options" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <option value="newest">Newest First</option>
-                        <option value="popular">Most Popular</option>
-                        <option value="upvotes">Most Upvoted</option>
-                        <option value="views">Most Viewed</option>
-                        <option value="comments">Most Discussed</option>
+                    <select id="sort-options" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                        <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
+                        <option value="upvotes" {% if current_sort == 'upvotes' %}selected{% endif %}>Most Upvoted</option>
+                        <option value="comments" {% if current_sort == 'comments' %}selected{% endif %}>Most Discussed</option>
                     </select>
                 </div>
 
-                <!-- Category Filter -->
                 <div class="mb-6">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-sm font-medium text-gray-700">Category</h3>
-                        <button class="text-xs text-indigo-600 hover:text-indigo-800" id="clear-categories">Clear</button>
+                        <button class="text-xs text-indigo-600" id="clear-categories">Clear</button>
                     </div>
                     <div class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                        {% for cat in categories %}
                         <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-    <input type="checkbox" name="category" value="1" 
-           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-    <span class="ml-3 text-sm text-gray-700">Web Development</span>
-    <span class="ml-auto text-xs text-gray-500">420</span>
-</label>
-<label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-    <input type="checkbox" name="category" value="2" 
-           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-    <span class="ml-3 text-sm text-gray-700">Data Science</span>
-    <span class="ml-auto text-xs text-gray-500">312</span>
-</label>
-<label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-    <input type="checkbox" name="category" value="3" 
-           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-    <span class="ml-3 text-sm text-gray-700">Mobile Development</span>
-    <span class="ml-auto text-xs text-gray-500">189</span>
-</label>
+                            <input type="checkbox" name="category" value="{{ cat.slug }}" 
+                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            <span class="ml-3 text-sm text-gray-700">{{ cat.name }}</span>
+                            <span class="ml-auto text-xs text-gray-500">{{ cat.count }}</span>
+                        </label>
+                        {% endfor %}
                     </div>
                 </div>
 
-                <!-- Difficulty Filter -->
                 <div class="mb-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-medium text-gray-700">Difficulty</h3>
-                        <button class="text-xs text-indigo-600 hover:text-indigo-800" id="clear-difficulty">Clear</button>
-                    </div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-3">Difficulty</h3>
                     <div class="space-y-2">
+                        {% for code, label in difficulty_choices %}
                         <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                            <input type="radio" name="difficulty" value="all" checked
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
-                            <span class="ml-3 text-sm text-gray-700">All Levels</span>
+                            <input type="radio" name="difficulty" value="{{ code }}" class="h-4 w-4 text-indigo-600">
+                            <span class="ml-3 text-sm text-gray-700">{{ label }}</span>
                         </label>
-                        <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                            <input type="radio" name="difficulty" value="beginner"
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
-                            <span class="ml-3 text-sm text-gray-700">🟢 Beginner</span>
-                            <span class="ml-auto text-xs text-gray-500">540</span>
-                        </label>
-                        <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                            <input type="radio" name="difficulty" value="intermediate"
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
-                            <span class="ml-3 text-sm text-gray-700">🟡 Intermediate</span>
-                            <span class="ml-auto text-xs text-gray-500">432</span>
-                        </label>
-                        <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                            <input type="radio" name="difficulty" value="advanced"
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
-                            <span class="ml-3 text-sm text-gray-700">🔴 Advanced</span>
-                            <span class="ml-auto text-xs text-gray-500">275</span>
-                        </label>
+                        {% endfor %}
                     </div>
                 </div>
 
-                <!-- Resource Type Filter -->
-                <div class="mb-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-medium text-gray-700">Resource Type</h3>
-                        <button class="text-xs text-indigo-600 hover:text-indigo-800" id="clear-types">Clear</button>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-    <input type="checkbox" name="resource_type" value="1" 
-           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-    <span class="ml-3 text-sm text-gray-700">📰 Article</span>
-    <span class="ml-auto text-xs text-gray-500">450</span>
-</label>
-<label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-    <input type="checkbox" name="resource_type" value="2" 
-           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-    <span class="ml-3 text-sm text-gray-700">🎥 Video</span>
-    <span class="ml-auto text-xs text-gray-500">320</span>
-</label>
-<label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-    <input type="checkbox" name="resource_type" value="3" 
-           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-    <span class="ml-3 text-sm text-gray-700">📚 Course</span>
-    <span class="ml-auto text-xs text-gray-500">210</span>
-</label>
-                    </div>
-                </div>
-
-                <!-- Time Filter -->
-                <div class="mb-6">
-                    <h3 class="text-sm font-medium text-gray-700 mb-3">Time Posted</h3>
-                    <select id="time-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <option value="all">Any Time</option>
-                        <option value="day">Past 24 Hours</option>
-                        <option value="week">Past Week</option>
-                        <option value="month">Past Month</option>
-                        <option value="year">Past Year</option>
-                    </select>
-                </div>
-
-                <!-- Action Buttons -->
                 <div class="space-y-3">
                     <button id="apply-filters" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 font-medium">
                         Apply Filters
@@ -224,44 +80,21 @@
             </div>
         </div>
 
-        <!-- Resources Grid -->
         <div class="lg:w-3/4">
-            <!-- Active Filters Display -->
-            <div id="active-filters" class="mb-6 flex flex-wrap gap-2">
-                <!-- Active filters will appear here -->
-            </div>
-
-            <!-- View Toggle -->
-            <div class="flex items-center justify-between mb-6">
-                <div class="text-sm text-gray-600">
-                    Showing <span id="showing-count">1-12</span> of <span id="total-count">1,247</span> resources
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-600 mr-2">View:</span>
-                    <button id="view-grid" class="p-2 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-600">
-                        <i class="fas fa-th-large"></i>
-                    </button>
-                    <button id="view-list" class="p-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50">
-                        <i class="fas fa-list"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Resources Container -->
             <div id="resources-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {% for resource in resources %}
-                <div class="resource-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:border-indigo-100">
+                <div class="resource-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                     <div class="p-5 border-b border-gray-100">
                         <div class="flex justify-between items-start mb-3">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-2xl">📚</span> <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">
-                                    {{ resource.category.name }}
-                                </span>
-                            </div>
+                            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">
+                                {{ resource.category.name }}
+                            </span>
                             {% if user.is_authenticated %}
-                            <button class="save-btn text-gray-400 hover:text-red-500 {% if resource.is_saved %}text-red-500{% endif %}"
-                                    data-resource-id="{{ resource.pk }}" data-is-saved="{{ resource.is_saved|lower }}">
-                                <i class="{% if resource.is_saved %}fas{% else %}far{% endif %} fa-bookmark"></i>
+                            <button class="interaction-btn save-btn transition-colors"
+                                    data-resource-id="{{ resource.pk }}" 
+                                    data-type="save" 
+                                    data-active="{{ resource.is_saved|lower }}">
+                                <i class="{% if resource.is_saved %}fas text-red-500{% else %}far text-gray-400{% endif %} fa-bookmark"></i>
                             </button>
                             {% endif %}
                         </div>
@@ -271,497 +104,117 @@
                                 {{ resource.title }}
                             </a>
                         </h3>
-
-                        <p class="text-gray-600 text-sm mb-3 line-clamp-3">
-                            {{ resource.description }}
-                        </p>
+                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ resource.description }}</p>
                     </div>
 
                     <div class="p-5">
-                        <div class="flex items-center mb-4">
-                            {% with difficulty=resource.difficulty %}
-                            <span class="px-3 py-1
-                                {% if difficulty == 'B' %}bg-green-100 text-green-800 🟢 Beginner{% elif difficulty == 'I' %}bg-yellow-100 text-yellow-800 🟡 Intermediate{% elif difficulty == 'A' %}bg-red-100 text-red-800 🔴 Advanced{% endif %}
-                                rounded-full text-xs font-medium">
-                                {% if difficulty == 'B' %}🟢 Beginner{% elif difficulty == 'I' %}🟡 Intermediate{% elif difficulty == 'A' %}🔴 Advanced{% endif %}
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="px-2 py-1 text-xs font-bold rounded-lg 
+                                {% if resource.difficulty == 'B' %}bg-green-100 text-green-700{% elif resource.difficulty == 'I' %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                {{ resource.get_difficulty_display }}
                             </span>
-                            {% endwith %}
                         </div>
 
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center space-x-4 text-gray-500">
+                        <div class="flex justify-between items-center text-gray-500">
+                            <div class="flex items-center space-x-3">
                                 {% if user.is_authenticated %}
-                                <button class="upvote-btn flex items-center space-x-1 hover:text-indigo-600 {% if resource.is_upvoted %}text-indigo-600{% endif %}"
-                                        data-resource-id="{{ resource.pk }}" data-is-upvoted="{{ resource.is_upvoted|lower }}">
-                                    <i class="{% if resource.is_upvoted %}fas{% else %}far{% endif %} fa-thumbs-up"></i>
-                                    <span class="upvote-count text-sm font-medium">{{ resource.upvote_count|default:0|intcomma }}</span>
+                                <button class="interaction-btn upvote-btn flex items-center space-x-1"
+                                        data-resource-id="{{ resource.pk }}" 
+                                        data-type="upvote" 
+                                        data-active="{{ resource.is_upvoted|lower }}">
+                                    <i class="{% if resource.is_upvoted %}fas text-indigo-600{% else %}far{% endif %} fa-thumbs-up"></i>
+                                    <span class="count text-sm">{{ resource.upvote_count|default:0 }}</span>
                                 </button>
                                 {% endif %}
-                                <span class="flex items-center space-x-1">
-                                    <i class="far fa-eye"></i>
-                                    <span class="text-sm font-medium">{{ resource.views|default:0|intcomma }}</span>
-                                </span>
-                                <span class="flex items-center space-x-1">
+                                <span class="flex items-center space-x-1 text-sm">
                                     <i class="far fa-comment"></i>
-                                    <span class="text-sm font-medium">{{ resource.comment_count|default:0 }}</span>
+                                    <span>{{ resource.comment_count|default:0 }}</span>
                                 </span>
                             </div>
-
-                            <div class="flex items-center">
-                                <a href="{% url 'user_profile' user_identifier=resource.author.email %}"
-                                   class="flex items-center hover:text-indigo-600">
-                                    <div class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
-                                        <span class="text-indigo-600 text-xs font-medium">
-                                            {{ resource.author.first_name|default:resource.author.email|slice:":2"|upper }}
-                                        </span>
-                                    </div>
-                                    <span class="text-sm">{{ resource.author.first_name|default:resource.author.email }}</span>
-                                </a>
+                            <div class="text-xs">
+                                By {{ resource.author.first_name|default:resource.author.email|truncatechars:15 }}
                             </div>
                         </div>
-
-                       <div class="mt-4 flex flex-wrap gap-2">
-                            {% for tag in resource.tags.all|slice:":3" %}
-                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                                    {{ tag.name }}
-                                </span>
-                            {% endfor %}
-                            {% if resource.tags.all|length > 3 %}
-                                {% with remaining=resource.tags.all|length|add:"-3" %}
-                                    <span class="px-2 py-1 text-gray-500 text-xs">+{{ remaining }}</span>
-                                {% endwith %}
-                            {% endif %}
-                       </div>
                     </div>
                 </div>
                 {% empty %}
-                    <div class="lg:col-span-3 text-center py-16">
-                        <i class="fas fa-search text-5xl text-gray-400 mb-6"></i>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">No Resources Found</h3>
-                        <p class="text-gray-600">Try adjusting your filters or search terms.</p>
-                    </div>
+                <div class="lg:col-span-3 text-center py-20">
+                    <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">No resources found matching these criteria.</p>
+                </div>
                 {% endfor %}
             </div>
 
-            <div id="pagination" class="mt-12 flex justify-center">
+            <div class="mt-12">
                 {% include 'resources/pagination.html' %}
             </div>
-
-            <!-- Loading Skeleton -->
-<!-- Replace lines 236-272 (the skeleton loading section) with: -->
-
-<!-- Loading Skeleton -->
-<div id="loading-skeleton" class="hidden">
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <!-- Skeleton Card 1 -->
-        <div class="bg-white rounded-lg shadow-md p-4 animate-pulse">
-            <div class="flex justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-200 rounded"></div>
-                    <div class="w-16 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-6 h-6 bg-gray-200 rounded"></div>
-            </div>
-            <div class="h-4 bg-gray-200 rounded mb-2"></div>
-            <div class="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
-            <div class="h-3 bg-gray-200 rounded mb-4 w-1/2"></div>
-            <div class="h-8 bg-gray-200 rounded mb-3"></div>
-            <div class="flex justify-between">
-                <div class="flex space-x-4">
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-20 h-6 bg-gray-200 rounded"></div>
-            </div>
-        </div>
-        
-        <!-- Skeleton Card 2 -->
-        <div class="bg-white rounded-lg shadow-md p-4 animate-pulse">
-            <div class="flex justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-200 rounded"></div>
-                    <div class="w-16 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-6 h-6 bg-gray-200 rounded"></div>
-            </div>
-            <div class="h-4 bg-gray-200 rounded mb-2"></div>
-            <div class="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
-            <div class="h-3 bg-gray-200 rounded mb-4 w-1/2"></div>
-            <div class="h-8 bg-gray-200 rounded mb-3"></div>
-            <div class="flex justify-between">
-                <div class="flex space-x-4">
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-20 h-6 bg-gray-200 rounded"></div>
-            </div>
-        </div>
-        
-        <!-- Skeleton Card 3 -->
-        <div class="bg-white rounded-lg shadow-md p-4 animate-pulse">
-            <div class="flex justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-200 rounded"></div>
-                    <div class="w-16 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-6 h-6 bg-gray-200 rounded"></div>
-            </div>
-            <div class="h-4 bg-gray-200 rounded mb-2"></div>
-            <div class="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
-            <div class="h-3 bg-gray-200 rounded mb-4 w-1/2"></div>
-            <div class="h-8 bg-gray-200 rounded mb-3"></div>
-            <div class="flex justify-between">
-                <div class="flex space-x-4">
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-20 h-6 bg-gray-200 rounded"></div>
-            </div>
-        </div>
-        
-        <!-- Skeleton Card 4 -->
-        <div class="bg-white rounded-lg shadow-md p-4 animate-pulse">
-            <div class="flex justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-200 rounded"></div>
-                    <div class="w-16 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-6 h-6 bg-gray-200 rounded"></div>
-            </div>
-            <div class="h-4 bg-gray-200 rounded mb-2"></div>
-            <div class="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
-            <div class="h-3 bg-gray-200 rounded mb-4 w-1/2"></div>
-            <div class="h-8 bg-gray-200 rounded mb-3"></div>
-            <div class="flex justify-between">
-                <div class="flex space-x-4">
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-20 h-6 bg-gray-200 rounded"></div>
-            </div>
-        </div>
-        
-        <!-- Skeleton Card 5 -->
-        <div class="bg-white rounded-lg shadow-md p-4 animate-pulse">
-            <div class="flex justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-200 rounded"></div>
-                    <div class="w-16 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-6 h-6 bg-gray-200 rounded"></div>
-            </div>
-            <div class="h-4 bg-gray-200 rounded mb-2"></div>
-            <div class="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
-            <div class="h-3 bg-gray-200 rounded mb-4 w-1/2"></div>
-            <div class="h-8 bg-gray-200 rounded mb-3"></div>
-            <div class="flex justify-between">
-                <div class="flex space-x-4">
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-20 h-6 bg-gray-200 rounded"></div>
-            </div>
-        </div>
-        
-        <!-- Skeleton Card 6 -->
-        <div class="bg-white rounded-lg shadow-md p-4 animate-pulse">
-            <div class="flex justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-200 rounded"></div>
-                    <div class="w-16 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-6 h-6 bg-gray-200 rounded"></div>
-            </div>
-            <div class="h-4 bg-gray-200 rounded mb-2"></div>
-            <div class="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
-            <div class="h-3 bg-gray-200 rounded mb-4 w-1/2"></div>
-            <div class="h-8 bg-gray-200 rounded mb-3"></div>
-            <div class="flex justify-between">
-                <div class="flex space-x-4">
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                    <div class="w-10 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div class="w-20 h-6 bg-gray-200 rounded"></div>
-            </div>
         </div>
     </div>
 </div>
 
-            <!-- Pagination -->
-            <div id="pagination" class="mt-12 flex justify-center">
-                <nav class="flex items-center space-x-2">
-                    <button id="prev-page" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div id="page-numbers" class="flex items-center space-x-2">
-                        <!-- Page numbers will be generated here -->
-                    </div>
-                    <button id="next-page" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </nav>
-            </div>
-
-            <!-- Load More Button (for infinite scroll alternative) -->
-            <div id="load-more-container" class="mt-8 text-center hidden">
-                <button id="load-more" class="px-8 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
-                    Load More Resources
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Sample Data for Resources -->
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+    // 1. Filtering Logic
+    function applyFilters() {
+        const params = new URLSearchParams(window.location.search);
+        const searchVal = document.getElementById('search-within').value.trim();
+        const sortVal = document.getElementById('sort-options').value;
+        const diffVal = document.querySelector('input[name="difficulty"]:checked')?.value;
+        const catVal = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(c => c.value);
 
-    // Utility for showing toast messages (use the function from your goals.html)
-    function showToast(message, type) {
-        // ... (Define or ensure this function is available in base.html)
-        // Since we don't have base.html here, we'll use a placeholder for now
-        console.log(`[Toast ${type.toUpperCase()}]: ${message}`);
+        if (searchVal) params.set('q', searchVal); else params.delete('q');
+        params.set('sort', sortVal);
+        if (diffVal) params.set('difficulty', diffVal); else params.delete('difficulty');
+        if (catVal.length) params.set('category', catVal[0]); else params.delete('category');
+        
+        params.delete('page');
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
     }
 
-    // Function to handle the AJAX interaction
-    function handleResourceInteraction(resourceId, action, isCurrentlyActive, buttonElement) {
-        // Only allow interaction if the user is authenticated (checked server-side, but good client-side check)
-        if (!'{{ user.is_authenticated }}') {
-            alert("You must be logged in to interact with resources.");
-            return;
-        }
+    document.getElementById('apply-filters').addEventListener('click', applyFilters);
+    document.getElementById('reset-filters').addEventListener('click', () => window.location.href = window.location.pathname);
 
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    // 2. Interaction Logic (Upvote/Save)
+    document.querySelectorAll('.interaction-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const resourceId = this.dataset.resourceId;
+            const interactionType = this.dataset.type; // 'upvote' or 'save'
+            const isActive = this.dataset.active === 'true';
+            const icon = this.querySelector('i');
+            const countSpan = this.querySelector('.count');
 
-        // Optimistic UI Update (before server response)
-        const icon = buttonElement.querySelector('i');
-        const countSpan = buttonElement.querySelector('.upvote-count');
-        let currentCount = countSpan ? parseInt(countSpan.textContent.replace(/,/g, '')) : 0;
+            this.disabled = true;
 
-        // Determine classes based on action
-        const activeClass = action === 'upvote' ? 'text-indigo-600' : 'text-red-500';
-        const activeIcon = action === 'upvote' ? 'fa-thumbs-up' : 'fa-bookmark';
-
-        // Update UI immediately
-        if (isCurrentlyActive === 'true') {
-            // Un-do interaction
-            icon.classList.remove('fas', activeClass);
-            icon.classList.add('far');
-            if (countSpan) countSpan.textContent = (currentCount - 1).toLocaleString();
-        } else {
-            // Do interaction
-            icon.classList.remove('far');
-            icon.classList.add('fas', activeClass);
-            if (countSpan) countSpan.textContent = (currentCount + 1).toLocaleString();
-        }
-
-        // Disable button while waiting for response
-        buttonElement.disabled = true;
-
-        fetch('{% url "resource_interaction" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': csrftoken,
-            },
-            body: new URLSearchParams({
-                'resource_id': resourceId,
-                'action': action
+            fetch('{% url "resource_interaction" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: new URLSearchParams({
+                    'resource_id': resourceId,
+                    'interaction_type': interactionType // Fixed key name
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            buttonElement.disabled = false;
-            if (data.success) {
-                // Confirm UI state matches final server state
-                if (data.action === 'upvote') {
-                    // Update all buttons with the same ID
-                    document.querySelectorAll(`.upvote-btn[data-resource-id="${resourceId}"]`).forEach(btn => {
-                        btn.querySelector('.upvote-count').textContent = data.new_count;
-                        const finalIcon = btn.querySelector('i');
-                        if (data.is_active) {
-                            finalIcon.classList.add('fas', 'text-indigo-600');
-                            finalIcon.classList.remove('far');
-                        } else {
-                            finalIcon.classList.remove('fas', 'text-indigo-600');
-                            finalIcon.classList.add('far');
-                        }
-                        btn.setAttribute('data-is-upvoted', data.is_active);
-                    });
-                } else if (data.action === 'save') {
-                    document.querySelectorAll(`.save-btn[data-resource-id="${resourceId}"]`).forEach(btn => {
-                        const finalIcon = btn.querySelector('i');
-                        if (data.is_active) {
-                            finalIcon.classList.add('fas', 'text-red-500');
-                            finalIcon.classList.remove('far');
-                        } else {
-                            finalIcon.classList.remove('fas', 'text-red-500');
-                            finalIcon.classList.add('far');
-                        }
-                        btn.setAttribute('data-is-saved', data.is_active);
-                    });
+            .then(response => response.json())
+            .then(data => {
+                this.disabled = false;
+                if (data.success) {
+                    this.dataset.active = data.new_state;
+                    // Toggle Classes
+                    if (interactionType === 'upvote') {
+                        icon.className = data.new_state ? 'fas text-indigo-600 fa-thumbs-up' : 'far fa-thumbs-up';
+                        if (countSpan) countSpan.textContent = data.upvote_count;
+                    } else {
+                        icon.className = data.new_state ? 'fas text-red-500 fa-bookmark' : 'far text-gray-400 fa-bookmark';
+                    }
                 }
-                showToast(data.message, 'success');
-            } else {
-                // Revert UI if server fails and show error
-                if (isCurrentlyActive === 'true') {
-                    icon.classList.add('fas', activeClass);
-                    icon.classList.remove('far');
-                    if (countSpan) countSpan.textContent = (currentCount).toLocaleString();
-                } else {
-                    icon.classList.remove('fas', activeClass);
-                    icon.classList.add('far');
-                    if (countSpan) countSpan.textContent = (currentCount).toLocaleString();
-                }
-                showToast(data.error, 'error');
-            }
-        })
-        .catch(error => {
-            buttonElement.disabled = false;
-            // Revert UI on network error
-            showToast('Network error occurred.', 'error');
-            // ... (revert UI logic similar to failure block above)
+            })
+            .catch(() => this.disabled = false);
         });
-    }
-
-    // Attach event listeners to all interaction buttons
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.upvote-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const resourceId = this.getAttribute('data-resource-id');
-                const isCurrentlyUpvoted = this.getAttribute('data-is-upvoted');
-                handleResourceInteraction(resourceId, 'upvote', isCurrentlyUpvoted, this);
-            });
-        });
-
-        document.querySelectorAll('.save-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const resourceId = this.getAttribute('data-resource-id');
-                const isCurrentlySaved = this.getAttribute('data-is-saved');
-                handleResourceInteraction(resourceId, 'save', isCurrentlySaved, this);
-            });
-        });
-        // ... (rest of DOMContentLoaded logic)
     });
-
-    // Sample resources data
-    const sampleResources = [
-        {
-            id: 1,
-            title: "Complete React Hooks Tutorial 2024",
-            description: "Master useState, useEffect, useContext, and custom hooks with real-world examples and best practices.",
-            url: "https://example.com/react-hooks",
-            category: "Web Development",
-            category_class: "bg-indigo-100 text-indigo-800",
-            difficulty: "beginner",
-            difficulty_badge: "🟢 Beginner",
-            type: "course",
-            type_icon: "📚",
-            upvotes: 245,
-            views: 1200,
-            comments: 78,
-            creator: {
-                id: 1,
-                username: "johndoe",
-                name: "John Doe",
-                initials: "JD",
-                avatar_bg: "bg-indigo-100",
-                avatar_text: "text-indigo-600"
-            },
-            tags: ["react", "hooks", "javascript", "frontend"],
-            created_at: "2024-01-15",
-            read_time: 45,
-            saved: false,
-            upvoted: false
-        },
-        {
-            id: 2,
-            title: "Deep Learning with PyTorch: From Zero to Hero",
-            description: "A practical guide to building neural networks with PyTorch. Covers CNNs, RNNs, GANs, and deployment.",
-            url: "https://example.com/pytorch-guide",
-            category: "Machine Learning",
-            category_class: "bg-green-100 text-green-800",
-            difficulty: "intermediate",
-            difficulty_badge: "🟡 Intermediate",
-            type: "book",
-            type_icon: "📖",
-            upvotes: 189,
-            views: 890,
-            comments: 42,
-            creator: {
-                id: 2,
-                username: "sarahchen",
-                name: "Sarah Chen",
-                initials: "SC",
-                avatar_bg: "bg-green-100",
-                avatar_text: "text-green-600"
-            },
-            tags: ["pytorch", "deep-learning", "python", "ai"],
-            created_at: "2024-02-20",
-            read_time: 120,
-            saved: true,
-            upvoted: true
-        },
-        {
-            id: 3,
-            title: "Node.js Performance Optimization Guide",
-            description: "Learn how to optimize Node.js applications for maximum performance and scalability.",
-            url: "https://example.com/nodejs-performance",
-            category: "Web Development",
-            category_class: "bg-indigo-100 text-indigo-800",
-            difficulty: "advanced",
-            difficulty_badge: "🔴 Advanced",
-            type: "article",
-            type_icon: "📰",
-            upvotes: 312,
-            views: 2100,
-            comments: 56,
-            creator: {
-                id: 3,
-                username: "miket",
-                name: "Mike Thompson",
-                initials: "MT",
-                avatar_bg: "bg-blue-100",
-                avatar_text: "text-blue-600"
-            },
-            tags: ["nodejs", "performance", "backend", "javascript"],
-            created_at: "2024-03-05",
-            read_time: 30,
-            saved: false,
-            upvoted: false
-        },
-        // Add more sample resources as needed
-    ];
-
-    // Sample categories data
-    const categories = [
-        { id: 1, name: "Web Development", count: 420 },
-        { id: 2, name: "Data Science", count: 312 },
-        { id: 3, name: "Mobile Development", count: 189 },
-        { id: 4, name: "UI/UX Design", count: 156 },
-        { id: 5, name: "DevOps", count: 98 },
-        { id: 6, name: "Machine Learning", count: 204 },
-        { id: 7, name: "Programming Languages", count: 278 },
-        { id: 8, name: "Cloud Computing", count: 145 }
-    ];
-
-    // Sample resource types
-    const resourceTypes = [
-        { id: 1, name: "Article", icon: "📰", count: 450 },
-        { id: 2, name: "Video", icon: "🎥", count: 320 },
-        { id: 3, name: "Course", icon: "📚", count: 210 },
-        { id: 4, name: "Book", icon: "📖", count: 145 },
-        { id: 5, name: "Tool", icon: "🛠️", count: 122 },
-        { id: 6, name: "Documentation", icon: "📄", count: 89 },
-        { id: 7, name: "Cheatsheet", icon: "📋", count: 67 }
-    ];
-
-
-
-
-
-
+});
 </script>
 {% endblock %}
-</body>
-</html>

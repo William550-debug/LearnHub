@@ -4,6 +4,8 @@ from django.conf import settings
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.db.models import Count, Q
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 
 # 1. Learning Goal Model (The Parent)
@@ -143,6 +145,7 @@ class GoalMilestone(models.Model):
 class GoalUpdate(models.Model):
     """
     A journal entry or log of progress made towards a goal.
+    Now uses a Generic Foreign Key to link to Book, Article, or Course.
     """
     goal = models.ForeignKey(
         LearningGoal,
@@ -157,14 +160,24 @@ class GoalUpdate(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Optional: Link to a resource if the update is about completing/using a specific resource
-    resource = models.ForeignKey(
-        'resources.Resource',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='goal_updates'
+    # --- FIX: Generic Foreign Key Fields ---
+    # 1. Foreign Key to the ContentType model
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        # Restrict choices to resource types if desired, but not strictly necessary for the fix
+        limit_choices_to=models.Q(app_label='resources', model__in=('book', 'article', 'course')),
+        null=True, blank=True  # Allow updates without a linked resource
     )
+    # 2. Field to store the primary key of the linked object
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+
+    # 3. The Generic Foreign Key itself (the field we use in Python)
+    resource = GenericForeignKey('content_type', 'object_id')
+
+    # NOTE: The related_name='goal_updates' is removed because GenericForeignKeys
+    # cannot define a reverse relationship on the linked model.
+    # The reverse lookups will be handled via the ContentType framework.
 
     class Meta:
         ordering = ('-created_at',)

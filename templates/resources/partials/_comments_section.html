@@ -1,0 +1,49 @@
+<div class="bg-white p-6 rounded-xl shadow-lg mt-8">
+    <h2 class="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Comments ({{ comments|length }})</h2>
+
+    <div class="mb-8">
+        <form method="POST" action="{% url 'add_comment' resource_slug=resource.slug %}">
+            {% csrf_token %}
+            <textarea name="content" rows="3" placeholder="Add your comment here..."
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <div class="flex justify-end mt-3">
+                <button type="submit" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 font-medium disabled:opacity-50">
+                    Submit Comment
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="space-y-6">
+        {% for comment in comments %}
+            <div class="border-b pb-4 last:border-b-0">
+                <div class="flex items-start mb-2">
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-bold text-sm mr-3">
+                        {{ comment.author.username.0|upper }}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900">{{ comment.author.username }}</p>
+                        <p class="text-xs text-gray-500">{{ comment.created_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <p class="text-gray-800 ml-13">{{ comment.content }}</p>
+
+                {% if comment.replies.exists %}
+                    <div class="ml-8 mt-4 space-y-3 border-l pl-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Replies</h4>
+                        {% for reply in comment.replies.all %}
+                            <div class="text-sm">
+                                <span class="font-semibold text-gray-800">{{ reply.author.username }}:</span>
+                                {{ reply.content }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <button class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 ml-13">Reply</button>
+            </div>
+        {% empty %}
+            <p class="text-gray-500 text-sm">Be the first to leave a comment!</p>
+        {% endfor %}
+    </div>
+</div>

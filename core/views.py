@@ -1,16 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q,  Case, When
+from django.db.models import Count, Q, Case, When, Sum
 from django.contrib.auth import logout, get_user_model,authenticate,login
 from django.db import models
-from resources.models import Resource
+# FIX: Import BaseResource, which is the functional replacement for the old Resource model.
+# Also import concrete models for type checking if needed later.
+
+from goals.models import LearningGoal
+from resources.models import  BaseResource , UserResourceInteraction , Book , Article, Course
 from django.utils.text import slugify
 from core.models import SiteStats, Category, CustomUser, UserProfile ,Skill # Use 'core' models as source
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.utils.http import url_has_allowed_host_and_scheme # Keep import here for clarity
+from itertools import chain
 
 import logging
 
@@ -21,22 +27,10 @@ logger = logging.getLogger(__name__)
 # 1. AUTHENTICATION VIEWS (Django Built-in Views Handled in URLs)
 # ----------------------------------------------------------------------
 
-# NOTE: LoginView and LogoutView are best implemented directly in urls.py
-# using Django's built-in views (auth_views.LoginView.as_view(), etc.)
-# This avoids writing view code for core security functions.
-
-
-
-
 def logout_view(request):
     """
     This function handles the user logout process. It logs out the user from the current session and redirects them to the login page.
-
-    Parameters:
-    request (HttpRequest): The request object containing information about the HTTP request. This parameter is expected to be an instance of Django's HttpRequest class.
-
-    Returns:
-    HttpResponseRedirect: A redirect to the login page. This return value indicates that the user has been successfully logged out and redirected to the login page.
+    ...
     """
     logout(request)
     messages.info(request, 'You have been logged out successfully.')
@@ -48,6 +42,7 @@ User = get_user_model()
 
 
 def register_view(request):
+    # ... (Register view logic unchanged) ...
     if request.method == 'POST':
         first_name = request.POST.get('first_name', '').strip()
         email = request.POST.get('email', '').strip().lower()
@@ -127,6 +122,7 @@ def register_view(request):
 @sensitive_post_parameters('password')
 @never_cache
 def login_view(request):
+    # ... (Login view logic unchanged) ...
     """
     Secure login view with email-based authentication
     """
@@ -197,7 +193,6 @@ def login_view(request):
                 next_url = request.POST.get('next') or request.GET.get('next') or 'home'
 
                 # Security check: ensure next URL is safe
-                from django.utils.http import url_has_allowed_host_and_scheme
                 if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
                     return redirect(next_url)
                 else:
@@ -236,75 +231,121 @@ def login_view(request):
 @login_required
 def dashboard(request):
     """
-    Authenticated view displaying personalized stats
+    Authenticated view displaying personalized stats and recent user activity.
     """
+    user = request.user
+
     # Safely get or create profile
     try:
-        profile = request.user.profile
+        profile = user.profile
     except UserProfile.DoesNotExist:
-        profile = UserProfile.objects.create(user=request.user)
-        logger.warning(f"Created missing profile for user: {request.user.email}")
+        profile = UserProfile.objects.create(user=user)
+        logger.warning(f"Created missing profile for user: {user.email}")
 
-    # Use getattr for safe attribute access
+    # Safely retrieve stats from profile
     resources_completed = getattr(profile, 'resources_completed', 0)
 
     # Check which goal field exists
+    goals_achieved = 0
     if hasattr(profile, 'goals_archived_count'):
         goals_achieved = profile.goals_archived_count
     elif hasattr(profile, 'goals_achieved_count'):
         goals_achieved = profile.goals_achieved_count
-    else:
-        goals_achieved = 0
 
-    # IMPORTANT: Get user's UPLOADED resources (created by them)
-    recent_resources = Resource.objects.filter(
-        author=request.user
-    ).select_related('category').prefetch_related('tags').order_by('-created_at')[:10]
+    # --- 1. Get recent resources (Fixing the UNION error) ---
 
-    # Get resource stats
-    total_resources = Resource.objects.filter(author=request.user).count()
-    approved_resources = Resource.objects.filter(author=request.user, is_approved=True).count()
+    # Query top resources from each concrete model and combine/sort in Python.
+    # This avoids the SQL UNION error and preserves model instance functionality.
 
-    # Get total upvotes received
-    from django.db.models import Sum
-    total_upvotes_received = Resource.objects.filter(
-        author=request.user
-    ).aggregate(total_upvotes=Sum('upvote_count'))['total_upvotes'] or 0
+    recent_resources_list = []
 
-    # Get recent activity from other apps if available
-    recent_activity = []
+    # Query 10 of each type uploaded by the user
+    recent_resources_list.extend(
+        Book.objects.filter(author=user)
+        .select_related('category')
+        .prefetch_related('tags')
+        .order_by('-created_at')[:10]
+    )
+
+    recent_resources_list.extend(
+        Article.objects.filter(author=user)
+        .select_related('category')
+        .prefetch_related('tags')
+        .order_by('-created_at')[:10]
+    )
+
+    recent_resources_list.extend(
+        Course.objects.filter(author=user)
+        .select_related('category')
+        .prefetch_related('tags')
+        .order_by('-created_at')[:10]
+    )
+
+    # Sort the combined list in Python and take the final top 10
+    recent_resources = sorted(
+        recent_resources_list,
+        key=lambda r: r.created_at,
+        reverse=True
+    )[:10]
+
+    # --- 2. Get resource stats (Counts) ---
+
+    total_resources = (
+            Book.objects.filter(author=user).count() +
+            Article.objects.filter(author=user).count() +
+            Course.objects.filter(author=user).count()
+    )
+
+    approved_resources = (
+            Book.objects.filter(author=user, is_approved=True).count() +
+            Article.objects.filter(author=user, is_approved=True).count() +
+            Course.objects.filter(author=user, is_approved=True).count()
+    )
+
+    # --- 3. Get total upvotes received (Fixing the TypeError) ---
+
+    # Must use parentheses to ensure `or 0` resolves None before summation
+    total_upvotes_received = (
+            (Book.objects.filter(author=user)
+             .aggregate(total_upvotes=Sum('upvote_count'))['total_upvotes'] or 0)
+            +
+            (Article.objects.filter(author=user)
+             .aggregate(total_upvotes=Sum('upvote_count'))['total_upvotes'] or 0)
+            +
+            (Course.objects.filter(author=user)
+             .aggregate(total_upvotes=Sum('upvote_count'))['total_upvotes'] or 0)
+    )
+
+    # --- 4. Get Learning Goals ---
     learning_goals = []
-
-    # Try to import and get actual data if apps exist
     try:
-        from goals.models import LearningGoal
         learning_goals = LearningGoal.objects.filter(
-            user=request.user
+            user=user
         ).order_by('-created_at')[:3]
-    except (ImportError, Exception) as e:
+    except Exception as e:
         logger.debug(f"Could not load goals: {e}")
 
-    try:
-        from resources.models import UserResourceInteraction
-        recent_activity = UserResourceInteraction.objects.filter(
-            user=request.user
-        ).select_related('resource').order_by('-created_at')[:5]
-    except (ImportError, Exception) as e:
-        logger.debug(f"Could not load recent activity: {e}")
+    # --- 5. Context preparation ---
 
     context = {
         'profile': profile,
         'resources_completed': resources_completed,
         'goals_achieved': goals_achieved,
-        'recent_activity': recent_activity,
         'learning_goals': learning_goals,
-        # NEW: Add resources data
+
+        # Resources data
         'recent_resources': recent_resources,
         'total_resources': total_resources,
         'approved_resources': approved_resources,
         'total_upvotes_received': total_upvotes_received,
-        'user': request.user,  # Add user to context
-        'is_owner': True,  # Since it's their dashboard
+
+        'user': user,
+        'is_owner': True,
+
+        # Placeholder stats for completeness (you can implement these later)
+        'learning_time': 0,
+        'learning_time_change': 0,
+        'streak_days': 0,
     }
 
     return render(request, 'dashboard.html', context)
@@ -313,18 +354,27 @@ def dashboard(request):
 # Simple Home/Landing Page
 def home(request):
     """
-    Public-facing landing page, redirects authenticated users to the dashboard.
+    Public-facing landing page. Fixed FieldError by using specific related_names
+    for each concrete resource type.
     """
     if request.user.is_authenticated:
         return redirect('dashboard')
 
-    # Query site-wide statistics (SiteStats model)
+    # Query site-wide statistics
     stats = SiteStats.objects.first()
 
-    # Get categories, annotated with resource count
+    # Get categories, annotated with the sum of all resource types
     categories = Category.objects.annotate(
-        # Fix: Using 'resources' as related_name as defined in models.py (Phase 2, Step 2)
-        resource_count=Count('resources')
+        article_count=Count('resources_article_resources', distinct=True),
+        book_count=Count('resources_book_resources', distinct=True),
+        course_count=Count('resources_course_resources', distinct=True)
+    ).annotate(
+        # Sum the counts together for the total 'resource_count'
+        resource_count=(
+            models.F('article_count') +
+            models.F('book_count') +
+            models.F('course_count')
+        )
     ).order_by('-resource_count')[:8]
 
     context = {
@@ -332,7 +382,6 @@ def home(request):
         'categories': categories,
     }
 
-    # NOTE: The template path should be 'core/index.html'
     return render(request, 'index.html', context)
 
 
@@ -340,34 +389,86 @@ def home(request):
 def profile_detail(request, user_identifier):
     """
     Displays the user's public profile, bio, skills, and shared resources.
+
+    The function handles fetching the user, profile, and combining
+    resources from all concrete models (Book, Article, Course).
     """
-    # Query logic: Tries to find by email (primary ID), then falls back to first_name
+    # 1. Fetch Target User
     try:
-        # Tries to get the user using the email (case-insensitive)
-        user = CustomUser.objects.get(email__iexact=user_identifier)
+        # Prioritize email lookup
+        target_user = CustomUser.objects.get(email__iexact=user_identifier)
     except CustomUser.DoesNotExist:
-        # Fallback: Tries to get the user using first_name (less reliable but handles friendly URLs)
-        user = get_object_or_404(CustomUser, first_name__iexact=user_identifier)
+        # Fallback to get_object_or_404 based on first_name/username (as per your original code)
+        target_user = get_object_or_404(CustomUser, first_name__iexact=user_identifier)
 
-    # Automatically fetch the related profile (uses the 'profile' related_name)
-    profile = user.profile
+    profile = target_user.profile
 
-    # Fetch the user's shared resources (optimized query)
-    shared_resources = user.shared_resources.filter(is_approved=True).select_related('category').order_by(
-        '-created_at')[:10]
+    # Check if the currently logged-in user is the profile owner
+    is_owner = request.user.is_authenticated and request.user.id == target_user.id
 
-    # Check if the currently logged-in user is viewing their own profile
-    is_owner = request.user.is_authenticated and request.user.id == user.id
+    # 2. Fetch Shared Resources (CRITICAL FIX)
 
+    # We must explicitly query each concrete resource model using the shared 'author' field.
+
+    # Note: Book, Article, and Course must be imported at the top of views.py (they are).
+
+    # Fetch approved resources for the target_user, including related fields for the template
+    approved_books = Book.objects.filter(author=target_user, is_approved=True).select_related(
+        'category').prefetch_related('tags')
+    approved_articles = Article.objects.filter(author=target_user, is_approved=True).select_related(
+        'category').prefetch_related('tags')
+    approved_courses = Course.objects.filter(author=target_user, is_approved=True).select_related(
+        'category').prefetch_related('tags')
+
+    # Chain the querysets together. This returns an iterator of model instances.
+    shared_resources_qs = chain(approved_books, approved_articles, approved_courses)
+
+    # Convert to list and sort by created_at, then limit to the top 10
+    shared_resources = sorted(
+        list(shared_resources_qs),
+        key=lambda x: x.created_at,
+        reverse=True
+    )[:10]
+
+    # 3. Calculate Aggregated Stats (Optimized for the template)
+
+    # Total upvotes received
+    total_upvotes = (
+            (Book.objects.filter(author=target_user).aggregate(total=Sum('upvote_count'))['total'] or 0) +
+            (Article.objects.filter(author=target_user).aggregate(total=Sum('upvote_count'))['total'] or 0) +
+            (Course.objects.filter(author=target_user).aggregate(total=Sum('upvote_count'))['total'] or 0)
+    )
+
+    # Total comments received (Requires complex aggregation or simple list sum)
+    # Since resources are heterogeneous, we sum the comment count on the list itself:
+    # core/views.py (Inside profile_detail, Final Fix for Calculation)
+
+    # 3. Calculate Aggregated Stats (Optimized for the template)
+    # ... (total_upvotes calculation remains unchanged) ...
+
+    # Total comments received (Requires complex aggregation or simple list sum)
+    # Use a defensive check (hasattr) to ensure the attribute exists on the resource instance
+    total_comments_received = sum(
+        resource.comments.count()
+        for resource in shared_resources
+        if hasattr(resource, 'comments')  # <-- Defensive check added
+    )
+    # NOTE: This only counts comments on the top 10 resources.
+    # NOTE: This only counts comments on the top 10 resources. For an accurate total,
+    # you would need a more complex query targeting the Comment model.
+
+    # 4. Context Preparation
     context = {
         'profile': profile,
         'shared_resources': shared_resources,
-        'target_user': user,
+        'target_user': target_user,
         'is_owner': is_owner,
-        # Skills are available via: profile.skills.all
+
+        # New context variables for template stats
+        'total_upvotes': total_upvotes,
+        'total_comments_received': total_comments_received,
     }
 
-    # NOTE: The template path should be 'core/profile.html'
     return render(request, 'profile.html', context)
 
 
@@ -383,7 +484,8 @@ def unified_search(request):
 
     if query:
         # --- 1. Resource Search (Fulfills Resource, Tag search) ---
-        resource_queryset = Resource.objects.filter(is_approved=True).select_related('author',
+        # FIX: Target BaseResource for unified search
+        resource_queryset = BaseResource.objects.filter(is_approved=True).select_related('author',
                                                                                      'category').prefetch_related(
             'tags')
 

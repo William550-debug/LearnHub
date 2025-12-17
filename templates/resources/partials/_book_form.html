@@ -1,0 +1,30 @@
+{% load widget_tweaks %}
+
+<div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200">
+
+
+    <div class="mb-6">
+        <label for="id_file_book" class="block text-gray-700 font-medium mb-2">
+            Upload Book File *
+        </label>
+        {% render_field form.file id="id_file_book" class="w-full py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" %}
+        {% for error in form.file.errors %}
+            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+        {% endfor %}
+        <p class="text-sm text-gray-500 mt-1">Accepted formats: PDF, EPUB, MOBI (Max 50MB)</p>
+    </div>
+
+    <div class="mb-6">
+        <label for="id_pages_book" class="block text-gray-700 font-medium mb-2">
+            Total Pages (Optional)
+        </label>
+        {% render_field form.pages id="id_pages_book" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="e.g., 350" %}
+        {% for error in form.pages.errors %}
+            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    {% with resource_type="book" %}
+        {% include "resources/partials/_common_fields.html" %}
+    {% endwith %}
+</div>

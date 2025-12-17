@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LearnHub - Share & Discover Learning Resources{% endblock %}</title>
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Custom CSS -->
     <style>
         :root {
             --primary: #4F46E5;
@@ -39,11 +36,9 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
-    <!-- Navigation -->
     <nav class="bg-white shadow-md sticky top-0 z-50">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-16">
-                <!-- Logo/Brand -->
                 <div class="flex items-center">
                     <a href="{% url 'home' %}" class="flex items-center space-x-2">
                         <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
@@ -53,7 +48,6 @@
                     </a>
                 </div>
 
-                <!-- Search Bar (Center - Desktop) -->
                 <div class="flex-1 max-w-2xl mx-4 hidden md:block">
                     <form action="{% url 'search' %}" method="get" class="relative">
                         <input
@@ -68,23 +62,19 @@
                     </form>
                 </div>
 
-                <!-- User Menu (Right) -->
                 <div class="flex items-center space-x-4">
-                    <!-- Mobile Search Toggle -->
                     <button id="mobile-search-toggle" class="md:hidden text-gray-600">
                         <i class="fas fa-search"></i>
                     </button>
 
-                    <!-- User Menu Items -->
                     {% if user.is_authenticated %}
                     <div class="hidden md:flex items-center space-x-4">
                         <a href="{% url 'dashboard' %}" class="text-gray-700 hover:text-indigo-600 font-medium">
                             <i class="fas fa-home mr-1"></i> Dashboard
                         </a>
-                        <a href="{% url 'resource_create'  %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        <a href="{% url 'resource_create' resource_type='article' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
                             <i class="fas fa-plus mr-1"></i> Add Resource
                         </a>
-                        <!-- User Dropdown -->
                         <div class="relative group">
                             <button class="flex items-center space-x-2 focus:outline-none">
                                 <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -121,14 +111,12 @@
                     </div>
                     {% endif %}
 
-                    <!-- Mobile Hamburger Menu -->
                     <button id="mobile-menu-toggle" class="md:hidden text-gray-600">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Mobile Search Bar (Hidden by default) -->
             <div id="mobile-search-bar" class="hidden py-3 border-t">
                 <form action="{% url 'search' %}" method="get" class="relative">
                     <input
@@ -144,7 +132,6 @@
             </div>
         </div>
 
-        <!-- Mobile Menu (Hidden by default) -->
         <div id="mobile-menu" class="fixed inset-0 bg-gray-800 bg-opacity-50 z-50 hidden md:hidden">
             <div class="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-lg transform transition-transform duration-300 translate-x-full">
                 <div class="p-6">
@@ -200,7 +187,7 @@
                                 <i class="fas fa-book w-5"></i>
                                 <span>Resources</span>
                             </a>
-                            <a href="{% url 'resource_create' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
+                            <a href="{% url 'resource_create' resource_type='article' %}" class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600">
                                 <i class="fas fa-plus w-5"></i>
                                 <span>Add Resource</span>
                             </a>
@@ -240,14 +227,11 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="flex-grow">
         {% block content %}
-        <!-- Page content will be inserted here -->
         {% endblock %}
     </main>
 
-    <!-- Footer -->
     <footer class="bg-gray-800 text-white py-8 mt-12">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -290,13 +274,12 @@
                             <i class="fab fa-discord text-xl"></i>
                         </a>
                     </div>
-                    <p class="text-gray-400 mt-4 text-sm">© 2024 LearnHub. All rights reserved.</p>
+                    <p class="text-gray-400 mt-4 text-sm">© 2025 LearnHub. All rights reserved.</p>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- JavaScript -->
     <script>
         // Mobile Menu Toggle
         const mobileMenuToggle = document.getElementById('mobile-menu-toggle');

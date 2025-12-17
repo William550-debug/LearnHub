@@ -1,0 +1,29 @@
+{% load widget_tweaks %}
+
+<div class="space-y-6">
+
+    <div class="mb-6">
+        <label for="id_content_article" class="block text-gray-700 font-medium mb-2">
+            Article Content *
+        </label>
+        {% render_field form.content id="id_content_article" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" rows="8" placeholder="Write your article content here..." %}
+        {% for error in form.content.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="mb-6">
+        <label for="id_banner_image_article" class="block text-gray-700 font-medium mb-2">
+            Banner Image (Optional)
+        </label>
+        {% render_field form.banner_image id="id_banner_image_article" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" %}
+        <p class="text-sm text-gray-500 mt-1">Recommended size: 1200x600px (JPG, PNG, WebP)</p>
+        {% for error in form.banner_image.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+
+    {% with resource_type="article" %}
+        {% include "resources/partials/_common_fields.html" %}
+    {% endwith %}
+</div>

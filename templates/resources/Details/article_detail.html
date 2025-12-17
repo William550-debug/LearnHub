@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}{{ resource.title }} - Article{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+
+    <div class="mb-8">
+        {% if resource.banner_image %}
+        <img src="{{ resource.banner_image.url }}" alt="{{ resource.title }} banner" class="w-full h-80 object-cover rounded-xl shadow-xl mb-6">
+        {% endif %}
+
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-3">{{ resource.title }}</h1>
+
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 border-b pb-4 mb-6">
+            <span class="flex items-center">
+                <i class="fas fa-user-edit text-indigo-400 mr-2"></i>
+                By <span class="font-medium ml-1 text-indigo-700">{{ resource.author.username }}</span>
+            </span>
+            <span class="flex items-center">
+                <i class="fas fa-clock text-indigo-400 mr-2"></i>
+                Published: {{ resource.created_at|date:"M d, Y" }}
+            </span>
+            <span class="px-3 py-1 rounded-full text-xs font-medium
+                {% if resource.difficulty == 'B' %}bg-green-100 text-green-800{% elif resource.difficulty == 'I' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                {{ resource.get_difficulty_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div class="lg:col-span-3">
+            <article class="prose lg:prose-lg max-w-none bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                <p class="lead text-gray-700 mb-6">{{ resource.description }}</p>
+                <hr>
+                {{ resource.content|safe }}
+            </article>
+
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">Tags</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for tag in resource.tags.all %}
+                        <a href="{% url 'resource_list' %}?q={{ tag.name }}" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm hover:bg-gray-300 transition-colors">
+                            #{{ tag.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% include "resources/partials/_comments_section.html" %}
+        </div>
+
+        <div class="lg:col-span-1">
+            {% include "resources/partials/_interaction_panel.html" with resource=resource user_interaction=user_interaction %}
+            {% include "resources/partials/_similar_resources.html" with similar_resources=similar_resources %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,581 +1,788 @@
 {% extends "base.html" %}
 {% load widget_tweaks %}
+{% load static %}
 
-{% block title %} 
+{% block title %}
     {% if edit_mode %}
         Edit Resource - Learning Hub
     {% else %}
-        Add Resource - Learning Hub
+        Share a Resource - Learning Hub
     {% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Header -->
+        <div class="text-center mb-12">
             {% if edit_mode %}
-                Edit Resource
-            {% else %}
-                Share a Learning Resource
-            {% endif %}
-        </h1>
-        <p class="text-gray-600">
-            {% if edit_mode %}
-                Update your resource information below
-            {% else %}
-                Help others learn by sharing useful tutorials, articles, courses, and tools
-            {% endif %}
-        </p>
-    </div>
-
-    <!-- Form -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <form id="resource-form" method="POST" 
-              action="{% if edit_mode %}{% url 'resource_update' resource_slug=resource.slug %}{% else %}{% url 'resource_create' %}{% endif %}">
-            {% csrf_token %}
-
-         <!-- Debug: Show all form fields -->
-        <div style="display: none;">
-            {% for field in form %}
-                Field: {{ field.name }}<br>
-                Value: {{ field.value|default:"Empty" }}<br>
-                Errors: {{ field.errors }}<br><br>
-            {% endfor %}
-        </div>
-
-        <!-- Your form fields here -->
-
-            {% if form.non_field_errors %}
-            <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                <p><i class="fas fa-exclamation-circle mr-2"></i>
-                    {{ form.non_field_errors }}
+                <h1 class="text-4xl font-extrabold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                    Edit Your Resource
+                </h1>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Update and improve your {{ resource_type }} information
                 </p>
+            {% else %}
+                <h1 class="text-4xl font-extrabold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                    Share Your Knowledge
+                </h1>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Contribute to the learning community by sharing valuable resources
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Main Card Container -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+
+            {% if not edit_mode %}
+            <!-- Modern Tabs Navigation -->
+            <div class="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                <div class="flex justify-center">
+                    <nav class="flex space-x-1 p-4" id="resource-tabs" role="tablist">
+                        <button type="button"
+                                data-type="article"
+                                role="tab"
+                                class="tab-btn group relative flex flex-col items-center px-8 py-4 rounded-xl transition-all duration-300 min-w-[140px]"
+                                data-default-selected>
+                            <div class="mb-2 p-3 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 group-hover:from-blue-200 group-hover:to-indigo-200 transition-all duration-300">
+                                <i class="fas fa-newspaper text-2xl text-indigo-600"></i>
+                            </div>
+                            <span class="font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors">Article</span>
+                            <span class="text-xs text-gray-500 mt-1">Tutorial & Guides</span>
+                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-transparent transition-all duration-300"></div>
+                        </button>
+
+                        <button type="button"
+                                data-type="book"
+                                role="tab"
+                                class="tab-btn group relative flex flex-col items-center px-8 py-4 rounded-xl transition-all duration-300 min-w-[140px]">
+                            <div class="mb-2 p-3 rounded-full bg-gradient-to-br from-emerald-100 to-green-100 group-hover:from-emerald-200 group-hover:to-green-200 transition-all duration-300">
+                                <i class="fas fa-book-open text-2xl text-emerald-600"></i>
+                            </div>
+                            <span class="font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors">Book</span>
+                            <span class="text-xs text-gray-500 mt-1">PDFs & eBooks</span>
+                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-transparent transition-all duration-300"></div>
+                        </button>
+
+                        <button type="button"
+                                data-type="course"
+                                role="tab"
+                                class="tab-btn group relative flex flex-col items-center px-8 py-4 rounded-xl transition-all duration-300 min-w-[140px]">
+                            <div class="mb-2 p-3 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 group-hover:from-purple-200 group-hover:to-pink-200 transition-all duration-300">
+                                <i class="fas fa-graduation-cap text-2xl text-purple-600"></i>
+                            </div>
+                            <span class="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">Course</span>
+                            <span class="text-xs text-gray-500 mt-1">Learning Paths</span>
+                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-transparent transition-all duration-300"></div>
+                        </button>
+                    </nav>
+                </div>
             </div>
             {% endif %}
 
-            <!-- Title Field -->
-            <div class="mb-6">
-                <label for="{{ form.title.id_for_label }}" class="block text-gray-700 font-medium mb-2">
-                    Resource Title *
-                </label>
-                {% render_field form.title class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="e.g., Complete React Hooks Tutorial 2024" %}
-                {% for error in form.title.errors %}
-                    <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-                {% endfor %}
-                <p class="text-sm text-gray-500 mt-1">Be specific and descriptive</p>
-            </div>
+            <!-- Form Container -->
+            <div class="p-8 md:p-10">
+                <form id="resource-form" method="POST"
+                     action='#'
+                      enctype="multipart/form-data"
+                      class="max-w-3xl mx-auto">
+                    {% csrf_token %}
 
-            <!-- URL Field -->
-            <div class="mb-6">
-                <label for="{{ form.url.id_for_label }}" class="block text-gray-700 font-medium mb-2">
-                    Resource URL *
-                </label>
-                {% render_field form.url class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="https://example.com/tutorial" %}
-                {% for error in form.url.errors %}
-                    <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-                {% endfor %}
-                <p class="text-sm text-gray-500 mt-1">Link to the learning resource</p>
-            </div>
+                    <!-- Hidden field to track resource type -->
 
-            <!-- Description Field -->
-            <!-- Description Field -->
-            <!-- Description Field - Remove placeholder -->
-            <div class="mb-6">
-                <label for="{{ form.description.id_for_label }}" class="block text-gray-700 font-medium mb-2">
-                    Description *
-                </label>
-                {% render_field form.description class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" rows="5" %}
-                {% for error in form.description.errors %}
-                    <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-                {% endfor %}
-                <div class="flex justify-between text-sm text-gray-500 mt-1">
-                    <span>Be detailed and helpful</span>
-                    <span id="description-count">0/500 characters</span>
-                </div>
-            </div>
-
-            <!-- Category and Resource Type -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <!-- Category Field -->
-                <div>
-                    <label for="{{ form.category.id_for_label }}" class="block text-gray-700 font-medium mb-2">
-                        Category *
-                    </label>
-                    {% render_field form.category class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" %}
-                    {% for error in form.category.errors %}
-                        <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-                    {% endfor %}
-                </div>
-
-                <!-- Hidden difficulty field for form(submission)-->
-                <input type="hidden" name="difficulty" id="difficulty-hidden" value="{{ form.difficulty.value|default:'B' }}">
-
-
-
-
-
-                <!-- Resource Type (if your model has it) -->
-                {% if form.resource_type %}
-                <div>
-                    <label for="{{ form.resource_type.id_for_label }}" class="block text-gray-700 font-medium mb-2">
-                        Resource Type *
-                    </label>
-                    {% render_field form.resource_type class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" %}
-                    {% for error in form.resource_type.errors %}
-                        <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Custom difficulty radio Buttons --><!-- Custom difficulty radio Buttons -->
-                <div class="mb-6">
-                    <label class="block text-gray-700 font-medium mb-3">
-                        Difficulty Level *
-                    </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="difficulty-radio-group">
-                        {% for choice in form.difficulty_choices %}
-                        <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 difficulty-option {% if choice.selected %}bg-indigo-50 border-indigo-300{% endif %}" data-value="{{ choice.value }}">
-                            <!-- CHANGE: name="difficulty" instead of name="difficulty_radio" -->
-                            <input type="radio" name="difficulty" value="{{ choice.value }}" class="mr-3" {% if choice.selected %}checked{% endif %}>
-                            <div>
-                                <div class="font-medium text-gray-900">{{ choice.label }}</div>
-                                <p class="text-sm text-gray-600">{{ choice.description }}</p>
-                            </div>
-                        </label>
-                        {% endfor %}
-                    </div>
-                    {% for error in form.difficulty.errors %}
-                        <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-                    {% endfor %}
-                </div>
-
-<!-- REMOVE this hidden field - it's not needed anymore -->
-<!-- <input type="hidden" name="difficulty" id="difficulty-hidden" value="{{ form.difficulty.value|default:'B' }}"> -->
-
-            <!-- Tags Field -->
-            <div class="mb-8">
-                <label for="{{ form.tags_string.id_for_label }}" class="block text-gray-700 font-medium mb-2">
-                    Tags (comma-separated)
-                </label>
-                <div class="relative">
-                    {% render_field form.tags_string class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="react, javascript, tutorial" id="tags-input" %}
-                    
-                    <div id="tag-suggestions" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        <!-- Suggestions will appear here -->
-                    </div>
-                </div>
-                {% for error in form.tags_string.errors %}
-                    <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-                {% endfor %}
-                <p class="text-sm text-gray-500 mt-1">Add relevant tags to help others find your resource</p>
-
-                <!-- Selected Tags Display -->
-                <div id="selected-tags" class="flex flex-wrap gap-2 mt-3">
-                    {% if form.tags_string.value %}
-                        {% for tag in form.tags_string.value.split|slice:"," %}
-                        <span class="tag px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm flex items-center">
-                            {{ tag }}
-                            <button type="button" class="ml-2 text-indigo-600 hover:text-indigo-800 remove-tag">
-                                <i class="fas fa-times text-xs"></i>
-                            </button>
-                        </span>
-                        {% endfor %}
+                    {% if form.errors %}
+                        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+                            <p class="text-red-700 font-bold">Please correct the following errors:</p>
+                            {{ form.errors }}
+                        </div>
                     {% endif %}
-                </div>
-            </div>
+                    <input type="hidden" name="resource_type" id="resource_type_hidden" value="{{ resource_type|default:'article' }}">
 
-            <!-- Form Actions -->
-            <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
-                <button type="button" id="preview-btn" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
-                    <i class="fas fa-eye mr-2"></i> Preview
-                </button>
-                <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-medium">
                     {% if edit_mode %}
-                        <i class="fas fa-save mr-2"></i> Update Resource
-                    {% else %}
-                        <i class="fas fa-share mr-2"></i> Share Resource
-                    {% endif %}
-                </button>
-                {% if edit_mode %}
-                <a href="{% url 'resource_detail' resource_slug=resource.slug %}" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium text-center">
-                    <i class="fas fa-times mr-2"></i> Cancel
-                </a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
+                        <!-- Edit Mode - Single Form -->
+                        <div class="mb-8">
+                            <div class="flex items-center mb-6">
+                                <div class="p-3 rounded-lg {% if resource_type == 'article' %}bg-blue-100 text-blue-600{% elif resource_type == 'book' %}bg-emerald-100 text-emerald-600{% else %}bg-purple-100 text-purple-600{% endif %} mr-4">
+                                    <i class="fas {% if resource_type == 'article' %}fa-newspaper{% elif resource_type == 'book' %}fa-book-open{% else %}fa-graduation-cap{% endif %} text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-2xl font-bold text-gray-900">Edit {{ resource_type|title }}</h2>
+                                    <p class="text-gray-600">Update your resource details</p>
+                                </div>
+                            </div>
 
-    <!-- Preview Modal -->
-    <div id="preview-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-xl bg-white">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-900">Resource Preview</h3>
-                <button id="close-preview" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-            <div id="preview-content" class="prose max-w-none">
-                <!-- Preview content will be inserted here -->
+                            {% if resource_type == 'book' %}
+                                {% include "resources/partials/_book_form.html" with form=form %}
+                            {% elif resource_type == 'article' %}
+                                {% include "resources/partials/_article_form.html" with form=form %}
+                            {% elif resource_type == 'course' %}
+                                {% include "resources/partials/_course_form.html" with form=form %}
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <!-- Create Mode - Tabbed Content -->
+                        <div id="tab-content-container">
+                            <!-- Article Form -->
+                            <div data-type-content="article" id="article-form-container" class="tab-content active">
+                                <div class="mb-8">
+                                    <div class="flex items-center mb-6">
+                                        <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                                            <i class="fas fa-newspaper text-2xl text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-gray-900">Create an Article</h2>
+                                            <p class="text-gray-600">Write and publish your own tutorial or guide</p>
+                                        </div>
+                                    </div>
+
+                                    {% if article_form %}
+                                        {% include "resources/partials/_article_form.html" with form=article_form %}
+                                    {% else %}
+                                        <p class="text-red-500">Article form not available. Please check your view.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Book Form -->
+                            <div data-type-content="book" id="book-form-container" class="tab-content hidden">
+                                <div class="mb-8">
+                                    <div class="flex items-center mb-6">
+                                        <div class="p-3 bg-emerald-100 rounded-lg mr-4">
+                                            <i class="fas fa-book-open text-2xl text-emerald-600"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-gray-900">Upload a Book</h2>
+                                            <p class="text-gray-600">Share books, ebooks, or textbooks</p>
+                                        </div>
+                                    </div>
+
+                                    {% if book_form %}
+                                        {% include "resources/partials/_book_form.html" with form=book_form %}
+                                    {% else %}
+                                        <p class="text-red-500">Book form not available. Please check your view.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Course Form -->
+                            <div data-type-content="course" id="course-form-container" class="tab-content hidden">
+                                <div class="mb-8">
+                                    <div class="flex items-center mb-6">
+                                        <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                                            <i class="fas fa-graduation-cap text-2xl text-purple-600"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-gray-900">Create a Course</h2>
+                                            <p class="text-gray-600">Design a structured learning path</p>
+                                        </div>
+                                    </div>
+
+                                    {% if course_form %}
+                                        {% include "resources/partials/_course_form.html" with form=course_form %}
+                                    {% else %}
+                                        <p class="text-red-500">Course form not available. Please check your view.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Common Action Buttons (Moved outside partials) -->
+                    <div class="mt-12 pt-8 border-t border-gray-200 flex flex-col sm:flex-row gap-4">
+                        <button type="button"
+                                id="preview-button"
+                                class="preview-btn px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium flex items-center justify-center transition-all duration-300 group">
+                            <i class="fas fa-eye mr-2 group-hover:scale-110 transition-transform"></i>
+                            Preview
+                        </button>
+
+                        <button type="submit"
+                                class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-indigo-700 hover:to-purple-700 font-semibold flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {% if edit_mode %}
+                                <i class="fas fa-save mr-2"></i>
+                                Update Resource
+                            {% else %}
+                                <i class="fas fa-rocket mr-2"></i>
+                                Publish Resource
+                            {% endif %}
+                        </button>
+
+                        {% if edit_mode %}
+                        <a href="{% url 'resource_detail' resource_slug=resource.slug %}"
+                           class="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium text-center flex items-center justify-center transition-all duration-300">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancel
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
 
-    <!-- Guidelines -->
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-            <i class="fas fa-info-circle text-blue-600 mr-2"></i> Sharing Guidelines
-        </h3>
-        <ul class="space-y-2 text-gray-700">
-            <li class="flex items-start">
-                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                <span>Share only high-quality, educational resources</span>
-            </li>
-            <li class="flex items-start">
-                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                <span>Provide accurate descriptions and difficulty levels</span>
-            </li>
-            <li class="flex items-start">
-                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                <span>Use relevant tags to help others discover your resource</span>
-            </li>
-            <li class="flex items-start">
-                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                <span>Avoid self-promotion or low-quality content</span>
-            </li>
-            <li class="flex items-start">
-                <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                <span>Check that the resource is accessible and free from paywalls</span>
-            </li>
-        </ul>
+        <!-- Guidelines Card -->
+        <div class="mt-8 max-w-3xl mx-auto">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200 shadow-lg">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-lightbulb text-yellow-500 mr-3 text-2xl"></i>
+                    Sharing Guidelines
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-4 rounded-xl border border-gray-200">
+                        <div class="flex items-center mb-3">
+                            <div class="p-2 bg-green-100 rounded-lg mr-3">
+                                <i class="fas fa-check text-green-600"></i>
+                            </div>
+                            <h4 class="font-semibold text-gray-900">Quality Content</h4>
+                        </div>
+                        <p class="text-sm text-gray-600">Share well-researched, accurate, and valuable learning materials.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200">
+                        <div class="flex items-center mb-3">
+                            <div class="p-2 bg-blue-100 rounded-lg mr-3">
+                                <i class="fas fa-tags text-blue-600"></i>
+                            </div>
+                            <h4 class="font-semibold text-gray-900">Proper Tagging</h4>
+                        </div>
+                        <p class="text-sm text-gray-600">Use relevant tags to help others discover your resource.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200">
+                        <div class="flex items-center mb-3">
+                            <div class="p-2 bg-purple-100 rounded-lg mr-3">
+                                <i class="fas fa-star text-purple-600"></i>
+                            </div>
+                            <h4 class="font-semibold text-gray-900">Clear Difficulty</h4>
+                        </div>
+                        <p class="text-sm text-gray-600">Accurately rate the difficulty level for better user experience.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Preview Modal -->
+<div id="preview-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm overflow-y-auto h-full w-full z-50 transition-opacity duration-300">
+    <div class="relative top-20 mx-auto p-0 w-full max-w-4xl shadow-2xl rounded-2xl overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-white">Resource Preview</h3>
+                <button id="close-preview" class="text-white hover:text-gray-200 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+        </div>
+        <div id="preview-content" class="bg-white p-8 max-h-[70vh] overflow-y-auto">
+            <!-- Preview content will be inserted here -->
+        </div>
+    </div>
+</div>
+
+
 <script>
-    // Character counter for description
-    const descriptionTextarea = document.getElementById('id_description');
-    const descriptionCount = document.getElementById('description-count');
+document.addEventListener('DOMContentLoaded', function() {
+    const resourceForm = document.getElementById('resource-form');
+    const hiddenTypeInput = document.getElementById('resource_type_hidden');
+    const tabsContainer = document.getElementById('resource-tabs');
+    const previewModal = document.getElementById('preview-modal');
+    const closePreviewBtn = document.getElementById('close-preview');
+    const previewButton = document.getElementById('preview-button');
 
-    if (descriptionTextarea && descriptionCount) {
-        descriptionTextarea.addEventListener('input', function() {
-            const length = this.value.length;
-            descriptionCount.textContent = `${length}/500 characters`;
-
-            if (length > 500) {
-                descriptionCount.classList.add('text-red-600');
-            } else {
-                descriptionCount.classList.remove('text-red-600');
-            }
-        });
-
-        // Initial count
-        descriptionTextarea.dispatchEvent(new Event('input'));
+    // Edit Mode Setup
+    if (!tabsContainer) {
+        hiddenTypeInput.value = '{{ resource_type }}';
+        setupFormValidation('{{ resource_type }}');
+        // Initialize setups for the single active form in edit mode
+        setupCharacterCounter(`id_description_{{ resource_type|lower }}`, `description-count-{{ resource_type|lower }}`);
+        setupTags('{{ resource_type|lower }}');
+        setupDifficultySelection();
+        return;
     }
 
-    // Difficulty Selection Functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const difficultyOptions = document.querySelectorAll('.difficulty-option');
-        const hiddenDifficultyInput = document.getElementById('difficulty-hidden');
+    // Modern Tab Switching with Animation
+    function switchTab(type) {
+        // Update hidden field
+        hiddenTypeInput.value = type;
 
-        // Initialize from existing value if any
-        if (hiddenDifficultyInput && hiddenDifficultyInput.value) {
-            const initialOption = document.querySelector(`.difficulty-option[data-value="${hiddenDifficultyInput.value}"]`);
-            if (initialOption) {
-                initialOption.classList.add('bg-indigo-50', 'border-indigo-300');
-                const radioInput = initialOption.querySelector('input[type="radio"]');
-                if (radioInput) {
-                    radioInput.checked = true;
-                }
+        // Update tab button styles with animation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const isSelected = btn.getAttribute('data-type') === type;
+
+            // Reset all tabs
+            btn.classList.remove('bg-white', 'shadow-lg', 'border-indigo-200');
+            btn.querySelector('div').classList.remove('scale-110');
+            btn.querySelector('.fa-solid')?.classList.remove('text-white'); // Added optional chaining
+
+            // Animate selected tab
+            if (isSelected) {
+                btn.classList.add('bg-white', 'shadow-lg', 'border-indigo-200');
+                btn.style.border = '1px solid #e5e7eb';
+                btn.querySelector('div').classList.add('scale-110');
+
+                // Update indicator
+                const indicator = btn.querySelector('div:last-child');
+                indicator.classList.remove('bg-transparent');
+                indicator.classList.add('bg-gradient-to-r', 'from-indigo-600', 'to-purple-600');
+            } else {
+                btn.style.border = '1px solid transparent';
+                const indicator = btn.querySelector('div:last-child');
+                indicator.classList.remove('bg-gradient-to-r', 'from-indigo-600', 'to-purple-600');
+                indicator.classList.add('bg-transparent');
             }
-        }
-
-        // Handle difficulty selection
-        difficultyOptions.forEach(option => {
-            const radioInput = option.querySelector('input[type="radio"]');
-
-            // Update hidden input when radio changes
-            radioInput.addEventListener('change', function() {
-                if (hiddenDifficultyInput) {
-                    hiddenDifficultyInput.value = this.value;
-                }
-                // Update visual selection
-                difficultyOptions.forEach(opt => {
-                    opt.classList.remove('bg-indigo-50', 'border-indigo-300');
-                });
-                option.classList.add('bg-indigo-50', 'border-indigo-300');
-            });
-
-            // Make the whole label clickable
-            option.addEventListener('click', function(e) {
-                if (e.target.type !== 'radio') {
-                    radioInput.checked = true;
-                    radioInput.dispatchEvent(new Event('change'));
-                }
-            });
         });
 
-        // If no difficulty selected yet, select Beginner by default
-        if (difficultyOptions.length > 0 && (!hiddenDifficultyInput || !hiddenDifficultyInput.value)) {
-            const firstOption = difficultyOptions[0];
-            const firstRadio = firstOption.querySelector('input[type="radio"]');
-            if (firstRadio) {
-                firstRadio.checked = true;
-                firstRadio.dispatchEvent(new Event('change'));
+        // Switch content with fade animation
+        document.querySelectorAll('.tab-content').forEach(content => {
+            const isActive = content.getAttribute('data-type-content') === type;
+
+            if (isActive) {
+                content.classList.remove('hidden', 'opacity-0', 'scale-95');
+                content.classList.add('block', 'opacity-100', 'scale-100');
+
+                // Enable all fields in active tab
+                content.querySelectorAll('input, select, textarea, button').forEach(field => {
+                    field.disabled = false;
+                });
+
+                // Setup validation and other utilities for active form
+                setupFormValidation(type);
+                setupCharacterCounter(`id_description_${type}`, `description-count-${type}`);
+                setupTags(type);
+                setupDifficultySelection();
+
+            } else {
+                content.classList.add('hidden', 'opacity-0', 'scale-95');
+                content.classList.remove('block', 'opacity-100', 'scale-100');
+
+                // Disable fields in inactive tabs
+                content.querySelectorAll('input, select, textarea, button').forEach(field => {
+                    field.disabled = true;
+                });
             }
-        }
+        });
+
+        // Animate tab transition
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.style.transition = 'all 0.3s ease-in-out';
+        });
+
+        // Update form action
+        const baseUrl = "{% url 'resource_create' resource_type='type' %}".replace('type', type);
+        resourceForm.setAttribute('action', baseUrl);
+    }
+
+    // Add tab click listeners
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const type = btn.getAttribute('data-type');
+            switchTab(type);
+        });
     });
 
-    // Tags functionality
-    const tagsInput = document.getElementById('tags-input');
-    const selectedTagsContainer = document.getElementById('selected-tags');
-    const tagSuggestions = document.getElementById('tag-suggestions');
+    // Initialize default tab
+    const defaultType = document.querySelector('[data-default-selected]')?.getAttribute('data-type') || 'article';
+    switchTab(defaultType); // This now initializes all sub-functionality
 
-    // Common tags for suggestions
-    const commonTags = [
-        'react', 'javascript', 'python', 'webdev', 'tutorial',
-        'beginners', 'css', 'nodejs', 'typescript', 'api',
-        'frontend', 'backend', 'database', 'docker', 'git',
-        'machinelearning', 'datascience', 'mobile', 'flutter'
-    ];
+    // Setup character counter
+    function setupCharacterCounter(textareaId, counterId) {
+        // ... (function logic is the same)
+        const textarea = document.getElementById(textareaId);
+        const counter = document.getElementById(counterId);
+        if (!textarea || !counter) return;
 
-    let selectedTags = [];
+        const updateCounter = () => {
+            const length = textarea.value.length;
+            counter.textContent = `${length}/1000`;
 
-    // Initialize selected tags from form value
-    if (tagsInput && tagsInput.value) {
-        selectedTags = tagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
-        updateTagsDisplay();
+            // Color coding
+            if (length > 1000) {
+                counter.classList.add('text-red-600', 'font-bold');
+                counter.classList.remove('text-gray-500');
+                textarea.classList.add('border-red-300', 'bg-red-50');
+            } else if (length > 800) {
+                counter.classList.add('text-yellow-600');
+                counter.classList.remove('text-gray-500', 'text-red-600');
+                textarea.classList.remove('border-red-300', 'bg-red-50');
+            } else {
+                counter.classList.add('text-gray-500');
+                counter.classList.remove('text-red-600', 'text-yellow-600', 'font-bold');
+                textarea.classList.remove('border-red-300', 'bg-red-50');
+            }
+        };
+
+        textarea.removeEventListener('input', updateCounter); // Prevent duplicate listeners
+        textarea.addEventListener('input', updateCounter);
+        textarea.removeEventListener('focus', () => { // Prevent duplicate listeners
+            textarea.classList.add('ring-2', 'ring-indigo-300');
+        });
+        textarea.addEventListener('focus', () => {
+            textarea.classList.add('ring-2', 'ring-indigo-300');
+        });
+        textarea.removeEventListener('blur', () => { // Prevent duplicate listeners
+            textarea.classList.remove('ring-2', 'ring-indigo-300');
+        });
+        textarea.addEventListener('blur', () => {
+            textarea.classList.remove('ring-2', 'ring-indigo-300');
+        });
+        updateCounter();
     }
 
-    // Add tag
-    function addTag(tag) {
-        if (tag && !selectedTags.includes(tag)) {
-            selectedTags.push(tag);
-            updateTagsDisplay();
-            if (tagsInput) tagsInput.value = selectedTags.join(', ');
-            if (tagSuggestions) tagSuggestions.classList.add('hidden');
-        }
-    }
+    // Setup difficulty selection
+    function setupDifficultySelection() {
+        // ... (function logic is the same)
+        document.querySelectorAll('.difficulty-option').forEach(option => {
+            option.removeEventListener('click', function(e) { /* ... */ }); // Prevent duplicate listeners
+            option.addEventListener('click', function(e) {
+                if (e.target.type === 'radio') return;
 
-    // Remove tag
-    function removeTag(tag) {
-        selectedTags = selectedTags.filter(t => t !== tag);
-        updateTagsDisplay();
-        if (tagsInput) tagsInput.value = selectedTags.join(', ');
-    }
+                // Remove selection from all in same group
+                this.closest('.grid').querySelectorAll('.difficulty-option').forEach(opt => {
+                    opt.classList.remove('border-2', 'border-indigo-400', 'bg-indigo-50', 'shadow-md');
+                    opt.classList.add('border-gray-300');
+                });
 
-    // Update tags display
-    function updateTagsDisplay() {
-        if (!selectedTagsContainer) return;
+                // Add selection to clicked
+                this.classList.add('border-2', 'border-indigo-400', 'bg-indigo-50', 'shadow-md');
+                this.classList.remove('border-gray-300');
 
-        selectedTagsContainer.innerHTML = '';
-        selectedTags.forEach(tag => {
-            const tagElement = document.createElement('span');
-            tagElement.className = 'tag px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm flex items-center';
-            tagElement.innerHTML = `
-                ${tag}
-                <button type="button" class="ml-2 text-indigo-600 hover:text-indigo-800 remove-tag">
-                    <i class="fas fa-times text-xs"></i>
-                </button>
-            `;
-
-            tagElement.querySelector('.remove-tag').addEventListener('click', () => removeTag(tag));
-            selectedTagsContainer.appendChild(tagElement);
+                // Check radio
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
+            });
         });
     }
 
-    // Show tag suggestions
-    if (tagsInput) {
-        tagsInput.addEventListener('input', function() {
-            if (!tagSuggestions) return;
+    // Setup tags functionality
+    function setupTags(type) {
+        // CORRECTED: Use the ID from your partial template, not the assumed Django ID
+        const input = document.getElementById(`tags-input-${type}`);
+        const container = document.getElementById(`selected-tags-${type}`);
+        const suggestions = document.getElementById(`tag-suggestions-${type}`);
 
-            const value = this.value.toLowerCase().trim();
+        // This is a new hidden input for the actual form submission,
+        // as the visible one (`tags-input-type`) is used for user interaction.
+        let actualHiddenInput = document.getElementById(`tags-value-${type}`);
+        if (!actualHiddenInput) {
+            actualHiddenInput = document.createElement('input');
+            actualHiddenInput.type = 'hidden';
+            actualHiddenInput.name = 'tags_string';
+            actualHiddenInput.id = `tags-value-${type}`;
+            // Append it to the main form to ensure it gets submitted
+            resourceForm.appendChild(actualHiddenInput);
+        }
 
-            if (!value) {
-                tagSuggestions.classList.add('hidden');
-                return;
-            }
+        if (!input || !container) return;
 
-            const matchingTags = commonTags.filter(tag =>
-                tag.includes(value) && !selectedTags.includes(tag)
+        const commonTags = [
+            'react', 'javascript', 'python', 'webdev', 'tutorial',
+            'beginners', 'css', 'nodejs', 'typescript', 'api',
+            'frontend', 'backend', 'database', 'docker', 'git',
+            'machinelearning', 'datascience', 'mobile', 'flutter', 'cybersecurity', 'hacking'
+        ];
+
+        // Use the value from the *hidden* input if it exists, otherwise the visible one
+        let selectedTags = actualHiddenInput.value ? actualHiddenInput.value.split(',').map(t => t.trim()).filter(t => t) : [];
+
+        function updateDisplay() {
+            container.innerHTML = '';
+            selectedTags.forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 rounded-full text-sm font-medium mr-2 mb-2 transition-all hover:scale-105';
+                tagEl.innerHTML = `
+                    <i class="fas fa-hashtag mr-1 text-xs"></i>
+                    ${tag}
+                    <button type="button" class="ml-2 text-indigo-600 hover:text-indigo-800 transition-colors">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+
+                tagEl.querySelector('button').addEventListener('click', () => {
+                    selectedTags = selectedTags.filter(t => t !== tag);
+                    updateDisplay();
+                    updateInput();
+                });
+
+                container.appendChild(tagEl);
+            });
+        }
+
+        function updateInput() {
+            // Update the hidden input that actually gets submitted
+            actualHiddenInput.value = selectedTags.join(', ');
+            // Clear the visible input field
+            input.value = '';
+        }
+
+        // --- Event Listeners ---
+        input.removeEventListener('input', handleTagInput); // Prevent duplicates
+        input.addEventListener('input', handleTagInput);
+
+        input.removeEventListener('keydown', handleTagKeydown); // Prevent duplicates
+        input.addEventListener('keydown', handleTagKeydown);
+
+        function handleTagInput() {
+            if (!suggestions) return;
+            const val = this.value.toLowerCase().trim();
+            const matches = commonTags.filter(t =>
+                t.includes(val) && !selectedTags.includes(t)
             ).slice(0, 5);
 
-            if (matchingTags.length > 0) {
-                tagSuggestions.innerHTML = matchingTags.map(tag => `
-                    <div class="suggestion-item px-4 py-2 hover:bg-gray-100 cursor-pointer" data-tag="${tag}">
-                        ${tag}
-                    </div>
-                `).join('');
+            if (matches.length && val.length > 0) {
+                suggestions.innerHTML = matches.map(tag =>
+                    `<div class="suggestion-item px-4 py-3 hover:bg-indigo-50 cursor-pointer rounded-lg flex items-center justify-between group">
+                        <span>${tag}</span>
+                        <i class="fas fa-plus text-gray-400 group-hover:text-indigo-600"></i>
+                    </div>`
+                ).join('');
+                suggestions.classList.remove('hidden');
 
-                tagSuggestions.classList.remove('hidden');
-
-                // Add click handlers to suggestions
-                tagSuggestions.querySelectorAll('.suggestion-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        addTag(this.getAttribute('data-tag'));
+                suggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        if (selectedTags.length < 5) {
+                            selectedTags.push(item.querySelector('span').textContent);
+                            updateDisplay();
+                            updateInput();
+                            suggestions.classList.add('hidden');
+                            input.value = '';
+                        }
                     });
                 });
             } else {
-                tagSuggestions.classList.add('hidden');
-            }
-        });
-
-        // Add tag on Enter or comma
-        tagsInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault();
-                const tag = this.value.trim();
-                if (tag) {
-                    addTag(tag);
-                    this.value = '';
-                }
-            }
-        });
-    }
-
-    // Hide suggestions when clicking outside
-    document.addEventListener('click', function(e) {
-        if (tagSuggestions && tagsInput) {
-            if (!tagsInput.contains(e.target) && !tagSuggestions.contains(e.target)) {
-                tagSuggestions.classList.add('hidden');
+                suggestions.classList.add('hidden');
             }
         }
-    });
+
+        function handleTagKeydown(e) {
+            if ((e.key === 'Enter' || e.key === ',') && input.value.trim() && selectedTags.length < 5) {
+                e.preventDefault();
+                selectedTags.push(input.value.trim().toLowerCase());
+                updateDisplay();
+                updateInput();
+                input.value = '';
+                if (suggestions) suggestions.classList.add('hidden');
+            }
+        }
+
+        updateDisplay();
+        updateInput(); // Initialize the hidden input value
+    }
+
+    // Form validation setup
+    // Replace your existing setupFormValidation and handleSubmit with this:
+
+function setupFormValidation(type) {
+    const form = document.getElementById('resource-form');
+
+    // Remove any existing listener to prevent "ghost" submissions
+    form.onsubmit = null;
+
+    form.onsubmit = function(e) {
+        e.preventDefault();
+
+        const activeType = document.getElementById('resource_type_hidden').value;
+        const container = document.querySelector(`[data-type-content="${activeType}"]`);
+
+        // 1. Manage field states (The most important fix)
+        // Disable everything first, then enable ONLY the active tab
+        document.querySelectorAll('.tab-content input, .tab-content textarea, .tab-content select').forEach(field => {
+            field.disabled = true;
+        });
+        container.querySelectorAll('input, textarea, select').forEach(field => {
+            field.disabled = false;
+        });
+
+        // 2. Validation with safety checks
+        let errors = [];
+        const titleField = container.querySelector(`[id^="id_title_"]`);
+        const descField = container.querySelector(`[id^="id_description_"]`);
+
+        if (!titleField || !titleField.value.trim()) errors.push('Title is required');
+        if (!descField || !descField.value.trim()) errors.push('Description is required');
+
+        if (errors.length > 0) {
+            showErrorModal(errors);
+            return false;
+        }
+
+        // 3. Visual Feedback
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Publishing...';
+        submitBtn.disabled = true;
+
+        // 4. Force Submission
+        form.submit();
+    };
+}
+
+    // Error modal
+    function showErrorModal(errors) {
+        // ... (function logic is the same)
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                <div class="flex items-center mb-6">
+                    <div class="p-3 bg-red-100 rounded-full mr-4">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900">Please fix the following:</h3>
+                </div>
+                <ul class="mb-6 space-y-2">
+                    ${errors.map(error => `
+                        <li class="flex items-center text-red-600">
+                            <i class="fas fa-times-circle mr-2"></i>
+                            ${error}
+                        </li>
+                    `).join('')}
+                </ul>
+                <button onclick="this.closest('.fixed').remove()"
+                        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300">
+                    Got it
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
 
     // Preview functionality
-    const previewBtn = document.getElementById('preview-btn');
-    const previewModal = document.getElementById('preview-modal');
-    const closePreviewBtn = document.getElementById('close-preview');
-    const previewContent = document.getElementById('preview-content');
+    previewButton?.addEventListener('click', function() {
+        const activeType = hiddenTypeInput.value;
+        const activeForm = document.querySelector(`[data-type-content="${activeType}"]`);
 
-    if (previewBtn && previewModal) {
-        previewBtn.addEventListener('click', function() {
-            // Get form values
-            const title = document.getElementById('id_title')?.value || 'Sample Title';
-            const description = document.getElementById('id_description')?.value || 'No description provided';
-            const categorySelect = document.getElementById('id_category');
-            const category = categorySelect ? categorySelect.options[categorySelect.selectedIndex]?.text : 'Uncategorized';
+        if (!activeForm) return;
 
-            // Get difficulty from hidden input or radio buttons
-            let difficulty = 'B'; // Default to Beginner
-            const hiddenDifficulty = document.getElementById('difficulty-hidden');
-            const selectedRadio = document.querySelector('input[name="difficulty_radio"]:checked');
+        // Collect data
+        // Use the corrected IDs from the partials
+        const title = activeForm.querySelector(`#id_title_${activeType}`)?.value || 'Sample Title';
+        const description = activeForm.querySelector(`#id_description_${activeType}`)?.value || 'No description provided';
+        const difficulty = activeForm.querySelector('input[name="difficulty"]:checked')?.value || 'B';
 
-            if (hiddenDifficulty && hiddenDifficulty.value) {
-                difficulty = hiddenDifficulty.value;
-            } else if (selectedRadio) {
-                difficulty = selectedRadio.value;
-            }
+        // Difficulty mapping
+        const difficultyMap = {
+            'B': { text: 'Beginner', color: 'bg-gradient-to-r from-green-500 to-emerald-500' },
+            'I': { text: 'Intermediate', color: 'bg-gradient-to-r from-yellow-500 to-amber-500' },
+            'A': { text: 'Advanced', color: 'bg-gradient-to-r from-red-500 to-pink-500' }
+        };
 
-            // Create preview content
-            const difficultyBadges = {
-                'B': '🟢 Beginner',
-                'I': '🟡 Intermediate',
-                'A': '🔴 Advanced',
-                'beginner': '🟢 Beginner',
-                'intermediate': '🟡 Intermediate',
-                'advanced': '🔴 Advanced'
-            };
-
-            previewContent.innerHTML = `
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex items-center space-x-2">
-                            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
-                                ${category.toUpperCase()}
-                            </span>
-                        </div>
-                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                            ${difficultyBadges[difficulty] || '🟢 Beginner'}
-                        </span>
-                    </div>
-
-                    <h2 class="text-2xl font-bold mb-4">${title}</h2>
-
-                    <div class="prose max-w-none">
-                        <h3 class="text-lg font-bold mb-2">Description</h3>
-                        <p class="text-gray-700 mb-6">${description}</p>
-
-                        <h3 class="text-lg font-bold mb-2">Tags</h3>
-                        <div class="flex flex-wrap gap-2 mb-6">
-                            ${selectedTags.map(tag => `
-                                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-                                    ${tag}
-                                </span>
-                            `).join('') || '<span class="text-gray-500">No tags added</span>'}
-                        </div>
-                    </div>
-
-                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <p class="text-gray-600 text-sm">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            This is a preview of how your resource will appear to others.
-                        </p>
+        // Type-specific content
+        let specificContent = '';
+        if (activeType === 'article') {
+            const content = activeForm.querySelector('#id_content_article')?.value || 'No content';
+            specificContent = `
+                <div class="mt-6">
+                    <h4 class="font-bold text-lg text-gray-800 mb-3">Content Preview</h4>
+                    <div class="prose max-w-none bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        ${content.substring(0, 500)}${content.length > 500 ? '...' : ''}
                     </div>
                 </div>
             `;
+        }
+        // ... (rest of the preview logic remains the same)
 
-            previewModal.classList.remove('hidden');
-        });
-    }
+        // Create preview
+        const previewHTML = `
+            <div class="space-y-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <span class="px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-700 rounded-full font-bold">
+                            ${activeType.toUpperCase()}
+                        </span>
+                        <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full font-bold">
+                            PREVIEW
+                        </span>
+                    </div>
+                    <span class="px-4 py-2 ${difficultyMap[difficulty].color} text-white rounded-full font-bold">
+                        ${difficultyMap[difficulty].text}
+                    </span>
+                </div>
 
-    if (closePreviewBtn) {
-        closePreviewBtn.addEventListener('click', function() {
-            if (previewModal) previewModal.classList.add('hidden');
-        });
-    }
+                <h2 class="text-3xl font-bold text-gray-900 leading-tight">${title}</h2>
 
-    // Close preview when clicking outside
+                <div class="mt-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Description</h3>
+                    <p class="text-gray-600 leading-relaxed whitespace-pre-line">${description}</p>
+                </div>
+
+                ${specificContent}
+
+                <div class="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <div class="flex items-center">
+                        <i class="fas fa-info-circle text-blue-500 text-xl mr-3"></i>
+                        <p class="text-blue-700 font-medium">This is how your resource will appear to the community.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('preview-content').innerHTML = previewHTML;
+        previewModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    });
+
+    // Close preview
+    closePreviewBtn?.addEventListener('click', function() {
+        previewModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    });
+
+    // Close preview on outside click
     window.addEventListener('click', function(e) {
-        if (previewModal && e.target === previewModal) {
+        if (e.target === previewModal) {
             previewModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
         }
     });
 
-    // Form submission validation
-    const resourceForm = document.getElementById('resource-form');
-    if (resourceForm) {
-        resourceForm.addEventListener('submit', function(e) {
-            // Basic validation
-            const title = document.getElementById('id_title')?.value.trim();
-            const url = document.getElementById('id_url')?.value.trim();
-            const description = document.getElementById('id_description')?.value.trim();
-            const category = document.getElementById('id_category')?.value;
-
-            // Check for difficulty selection (either hidden input or radio)
-            const hiddenDifficulty = document.getElementById('difficulty-hidden');
-            const selectedRadio = document.querySelector('input[name="difficulty_radio"]:checked');
-            const hasDifficulty = (hiddenDifficulty && hiddenDifficulty.value) || selectedRadio;
-
-            if (!title || !url || !description || !category || !hasDifficulty) {
-                e.preventDefault();
-                alert('Please fill in all required fields marked with *');
-                return;
-            }
-
-            // Validate URL
-            try {
-                new URL(url);
-            } catch {
-                e.preventDefault();
-                alert('Please enter a valid URL');
-                return;
-            }
-
-            // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
-                submitBtn.disabled = true;
-
-                // Re-enable button after 10 seconds in case of error
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }, 10000);
-            }
-        });
-    }
+    // Initialize all setups for the default tab
+    // Note: The redundant global initialization loop is removed as switchTab() handles it.
+});
 </script>
+
+<style>
+.tab-content {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.tab-content.block {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Custom scrollbar */
+#preview-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+#preview-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#preview-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #6366f1, #8b5cf6);
+    border-radius: 4px;
+}
+
+#preview-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #4f46e5, #7c3aed);
+}
+
+/* Input focus effects */
+input:focus, textarea:focus, select:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    outline: none;
+}
+
+/* Tag suggestion animation */
+.suggestion-item {
+    transition: all 0.2s ease;
+}
+
+.suggestion-item:hover {
+    transform: translateX(5px);
+}
+</style>
 {% endblock %}

@@ -1,0 +1,24 @@
+<div class="bg-white p-6 rounded-xl shadow-lg">
+    <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center">
+        <i class="fas fa-compass text-indigo-500 mr-2"></i> Similar Resources
+    </h3>
+
+    <div class="space-y-3">
+    {% if similar_resources %}
+        {% for s_resource in similar_resources %}
+        <a href="{% url 'resource_detail' resource_slug=s_resource.slug %}" class="block p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+            <p class="text-sm font-medium text-gray-900 line-clamp-2">{{ s_resource.title }}</p>
+            <div class="flex gap-2 mt-1 text-xs text-gray-500">
+                <span class="px-2 py-0.5 rounded bg-gray-200">{{ s_resource.get_resource_type }}</span>
+                <span class="px-2 py-0.5 rounded
+                    {% if s_resource.difficulty == 'B' %}bg-green-100 text-green-800{% elif s_resource.difficulty == 'I' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ s_resource.get_difficulty_display }}
+                </span>
+            </div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <p class="text-sm text-gray-500">No similar resources found in this category yet.</p>
+    {% endif %}
+    </div>
+</div>

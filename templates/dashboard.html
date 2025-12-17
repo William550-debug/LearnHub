@@ -3,18 +3,25 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto">
-    <!-- Welcome Header -->
-    <div class="mb-8">
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back,
-                <span class="text-indigo-600">{{ user.first_name|default:user.email }}</span>! 👋</h1>
-            <p class="text-gray-600">Here's your learning overview for today.</p>
+       <div class="mt-8 mb-12 flex justify-center">
+        <div class="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div class="rounded-2xl bg-white p-6 sm:p-8 shadow-sm border border-gray-100">
+                <h1 class="text-2xl sm:text-3xl font-semibold text-gray-900 leading-tight">
+                    Welcome back,
+                    <span class="text-indigo-600">
+                        {{ user.first_name|default:user.email }}
+                    </span> 👋
+                </h1>
+
+                <p class="mt-3 text-gray-500 text-sm sm:text-base">
+                    Here's your learning overview for today.
+                </p>
+            </div>
         </div>
     </div>
 
-    <!-- Stats Cards -->
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Learning Time -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-lg bg-blue-100">
@@ -30,8 +37,7 @@
             <p class="text-gray-600">Learning time this month</p>
         </div>
 
-        <!-- Resources Completed -->
-         <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-lg bg-green-100">
                     <i class="fas fa-check-circle text-green-600 text-xl"></i>
@@ -41,7 +47,6 @@
             <p class="text-gray-600">Resources completed</p>
         </div>
 
-        <!-- Goals Achieved -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-lg bg-purple-100">
@@ -52,7 +57,6 @@
             <p class="text-gray-600">Goals achieved</p>
         </div>
 
-        <!-- Streak -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-lg bg-yellow-100">
@@ -69,19 +73,15 @@
     </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left Column -->
         <div class="lg:col-span-2 space-y-8">
-                        <!-- Recent Activity -->
-                <!-- Your Recent Resources Section -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-gray-900">Your Resources</h2>
-                    <a href="{% url 'resource_create' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                    <a href="{% url 'resource_create' resource_type='article' %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
                         <i class="fas fa-plus mr-1"></i> Share New
                     </a>
                 </div>
 
-                <!-- Resource Stats -->
                 <div class="grid grid-cols-3 gap-4 mb-6">
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
                         <div class="text-2xl font-bold text-gray-900">{{ total_resources }}</div>
@@ -104,7 +104,6 @@
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-2">
-                                    <!-- Approval Status -->
                                     {% if resource.is_approved %}
                                     <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium flex items-center">
                                         <i class="fas fa-check-circle mr-1"></i> Approved
@@ -115,12 +114,10 @@
                                     </span>
                                     {% endif %}
 
-                                    <!-- Category -->
                                     <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-xs font-medium">
                                         {{ resource.category.name|default:"Uncategorized" }}
                                     </span>
 
-                                    <!-- Difficulty -->
                                     <span class="text-xs px-2 py-1 rounded
                                         {% if resource.difficulty == 'B' %}bg-green-100 text-green-800
                                         {% elif resource.difficulty == 'I' %}bg-yellow-100 text-yellow-800
@@ -131,7 +128,6 @@
                                     </span>
                                 </div>
 
-                                <!-- Resource Title -->
                                 <h3 class="font-medium text-gray-900 mb-1">
                                     <a href="{% url 'resource_detail' resource_slug=resource.slug %}"
                                        class="hover:text-indigo-600">
@@ -139,12 +135,10 @@
                                     </a>
                                 </h3>
 
-                                <!-- Description -->
                                 <p class="text-gray-600 text-sm mb-3 line-clamp-2">
                                     {{ resource.description|truncatechars:150 }}
                                 </p>
 
-                                <!-- Tags -->
                                 {% if resource.tags.all %}
                                 <div class="mb-3">
                                     {% for tag in resource.tags.all|slice:":3" %}
@@ -160,7 +154,6 @@
                                 </div>
                                 {% endif %}
 
-                                <!-- Stats and Actions -->
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center space-x-4 text-sm text-gray-500">
                                         <span class="flex items-center">
@@ -193,7 +186,6 @@
                     {% endfor %}
                 </div>
 
-                <!-- View All Link -->
                 <div class="mt-6 pt-6 border-t border-gray-200 text-center">
                     <a href="{% url 'user_profile' user_identifier=user.email %}"
                        class="text-indigo-600 hover:text-indigo-800 font-medium">
@@ -203,7 +195,6 @@
                 </div>
 
                 {% else %}
-                <!-- Empty State -->
                 <div class="text-center py-8">
                     <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
                         <i class="fas fa-cloud-upload-alt text-2xl text-indigo-600"></i>
@@ -212,12 +203,11 @@
                     <p class="text-gray-600 mb-4 max-w-md mx-auto">
                         Start sharing learning resources with the community. It's a great way to contribute and get upvotes!
                     </p>
-                    <a href="{% url 'resource_create' %}"
+                    <a href="{% url 'resource_create' resource_type='article' %}"
                        class="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium">
                         <i class="fas fa-plus mr-2"></i> Share Your First Resource
                     </a>
 
-                    <!-- Tips -->
                     <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100 text-left max-w-md mx-auto">
                         <p class="text-sm text-blue-800 font-medium mb-2 flex items-center">
                             <i class="fas fa-lightbulb mr-2"></i> What to share?
@@ -233,7 +223,6 @@
                 {% endif %}
             </div>
 
-            <!-- Learning Goals -->
             {% if learning_goals %}
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -243,8 +232,8 @@
                 <div class="space-y-6">
                     {% for goal in learning_goals %}
                     <div class="border-l-4
-                        {% if goal.status == 'completed' %}border-green-500
-                        {% elif goal.status == 'in_progress' %}border-blue-500
+                        {% if goal.status == 'C' %}border-green-500
+                        {% elif goal.status == 'I' %}border-blue-500
                         {% else %}border-yellow-500{% endif %}
                         pl-4 py-1">
                         <div class="flex justify-between items-start mb-2">
@@ -255,11 +244,11 @@
                                 {% endif %}
                             </div>
                             <span class="px-3 py-1
-                                {% if goal.status == 'completed' %}bg-green-100 text-green-800
-                                {% elif goal.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                {% if goal.status == 'C' %}bg-green-100 text-green-800
+                                {% elif goal.status == 'I' %}bg-blue-100 text-blue-800
                                 {% else %}bg-yellow-100 text-yellow-800{% endif %}
                                 rounded-full text-sm font-medium">
-                                {{ goal.status|title }}
+                                {{ goal.get_status_display }}
                             </span>
                         </div>
                         {% if goal.description %}
@@ -272,14 +261,12 @@
             {% endif %}
         </div>
 
-          <!-- Right Column -->
-        <div class="space-y-8">
-            <!-- Quick Actions -->
+          <div class="space-y-8">
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
 
                 <div class="space-y-4">
-                    <a href="{% url 'resource_create' %}" class="flex items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+                    <a href="{% url 'resource_create' resource_type='article' %}" class="flex items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
                         <div class="w-12 h-12 rounded-lg bg-indigo-600 flex items-center justify-center mr-4">
                             <i class="fas fa-plus text-white text-xl"></i>
                         </div>
@@ -311,7 +298,6 @@
                 </div>
             </div>
 
-            <!-- Recommended Resources -->
             {% if recommended_resources %}
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">Recommended Resources</h2>
@@ -344,33 +330,7 @@
             </div>
             {% endif %}
 
-            <!-- Profile Summary -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Your Profile</h2>
-                <div class="flex items-center mb-4">
-                    <div class="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
-                        <span class="text-indigo-600 font-medium text-xl">
-                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper|default:"" }}
-                        </span>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900">{{ user.get_full_name|default:user.email }}</h3>
-                        <p class="text-gray-600 text-sm">Member since {{ user.date_joined|date:"M Y" }}</p>
-                    </div>
-                </div>
 
-                {% if profile.bio %}
-                <div class="mt-4">
-                    <p class="text-gray-700 text-sm">{{ profile.bio|truncatechars:100 }}</p>
-                </div>
-                {% endif %}
-
-                <div class="mt-4">
-                    <a href="{% url 'user_profile' user.email %}" class="block w-full text-center bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition">
-                        View Full Profile
-                    </a>
-                </div>
-            </div>
         </div>
       </div>
 </div>
