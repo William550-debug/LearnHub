@@ -1,0 +1,280 @@
+<!-- templates/resources/course_analytics.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .analytics-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #4f46e5;
+    }
+
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .progress-bar-container {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .module-progress-row {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .module-progress-row:last-child {
+        border-bottom: none;
+    }
+
+    .completion-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-high {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-low {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">{{ course.title }}</h1>
+            <p class="text-gray-600 mt-2">Course Analytics Dashboard</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'resource_detail' course.slug %}"
+               class="btn btn-secondary">
+                <i class="fas fa-eye mr-2"></i>
+                View Course
+            </a>
+            <form method="POST" action="{% url 'regenerate_roadmap' course.id %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-primary"
+                        onclick="return confirm('This will regenerate the entire course roadmap. Continue?')">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Regenerate Roadmap
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="analytics-card">
+            <div class="stat-number">{{ total_enrollments }}</div>
+            <div class="stat-label">Total Enrollments</div>
+        </div>
+
+        <div class="analytics-card">
+            <div class="stat-number">{{ completed_enrollments }}</div>
+            <div class="stat-label">Completed Courses</div>
+        </div>
+
+        <div class="analytics-card">
+            <div class="stat-number">{{ completion_rate }}%</div>
+            <div class="stat-label">Completion Rate</div>
+        </div>
+
+        <div class="analytics-card">
+            <div class="stat-number">{{ total_modules }}</div>
+            <div class="stat-label">Total Modules</div>
+        </div>
+    </div>
+
+    <!-- Module Progress -->
+    <div class="analytics-card">
+        <h2 class="text-xl font-bold mb-6">Module Completion Rates</h2>
+
+        {% if module_stats %}
+        <div class="space-y-4">
+            {% for stat in module_stats %}
+            <div class="module-progress-row">
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium">Module {{ stat.module_number }}: {{ stat.module_title }}</span>
+                        <span class="text-gray-600 text-sm">{{ stat.video_count }} videos</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500">
+                            {{ stat.total_completions }} completions
+                        </span>
+                        <span class="text-sm font-medium">{{ stat.completion_rate }}%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: {{ stat.completion_rate }}%"></div>
+                    </div>
+                </div>
+                <div class="ml-6">
+                    {% if stat.completion_rate >= 70 %}
+                    <span class="completion-badge badge-high">High</span>
+                    {% elif stat.completion_rate >= 40 %}
+                    <span class="completion-badge badge-medium">Medium</span>
+                    {% else %}
+                    <span class="completion-badge badge-low">Low</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-center py-8">No module data available yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="analytics-card">
+        <h2 class="text-xl font-bold mb-6">Recent Completions</h2>
+
+        {% if recent_completions %}
+        <div class="space-y-4">
+            {% for completion in recent_completions %}
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-check text-blue-600"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium">{{ completion.user.username }}</p>
+                        <p class="text-sm text-gray-500">
+                            Completed module {{ completion.module_id }}
+                            <span class="mx-2">•</span>
+                            {{ completion.completed_at|timesince }} ago
+                        </p>
+                    </div>
+                </div>
+                <span class="text-sm text-gray-500">
+                    Total time: {{ completion.time_spent }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-center py-8">No recent completions.</p>
+        {% endif %}
+    </div>
+
+    <!-- Roadmap Info -->
+    <div class="analytics-card">
+        <h2 class="text-xl font-bold mb-6">Roadmap Information</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="font-medium mb-3">Generation Details</h3>
+                <ul class="space-y-2 text-gray-600">
+                    <li class="flex items-center">
+                        <i class="fas fa-robot text-purple-500 mr-2"></i>
+                        <span>AI-Generated: {% if course.ai_generated %}Yes{% else %}No{% endif %}</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-calendar text-blue-500 mr-2"></i>
+                        <span>Created: {{ course.created_at|date:"M d, Y" }}</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-sync-alt text-green-500 mr-2"></i>
+                        <span>Last Updated: {{ course.updated_at|date:"M d, Y" }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="font-medium mb-3">Actions</h3>
+                <div class="space-y-3">
+                    <a href="{% url 'resource_update' course.slug %}"
+                       class="block w-full text-center btn btn-secondary">
+                        <i class="fas fa-edit mr-2"></i>
+                        Edit Course Details
+                    </a>
+                    <button onclick="showRoadmapJson()"
+                            class="block w-full text-center btn btn-secondary">
+                        <i class="fas fa-code mr-2"></i>
+                        View Raw Roadmap JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JSON Modal -->
+<div id="jsonModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-lg font-bold">Roadmap JSON</h3>
+            <button onclick="closeJsonModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-4 overflow-auto max-h-[60vh]">
+            <pre class="text-sm bg-gray-900 text-gray-100 p-4 rounded overflow-x-auto">{{ course.roadmap_json|safe }}</pre>
+        </div>
+        <div class="p-4 border-t">
+            <button onclick="closeJsonModal()" class="btn btn-secondary">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showRoadmapJson() {
+        document.getElementById('jsonModal').classList.remove('hidden');
+        document.getElementById('jsonModal').classList.add('flex');
+    }
+
+    function closeJsonModal() {
+        document.getElementById('jsonModal').classList.add('hidden');
+        document.getElementById('jsonModal').classList.remove('flex');
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeJsonModal();
+        }
+    });
+</script>
+{% endblock %}

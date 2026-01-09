@@ -164,3 +164,5 @@ def goal_update_status(request, goal_pk):
         return JsonResponse({'success': False, 'error': 'Goal not found or unauthorized.'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+

@@ -41,6 +41,11 @@ class LearningGoal(models.Model):
     milestone_count = models.IntegerField(default=0)
     milestone_completed_count = models.IntegerField(default=0)
 
+    #Generik link to the Course
+    content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    course_object = GenericForeignKey('content_type', 'object_id')
+
     class Meta:
         ordering = ('status', '-created_at')
         unique_together = ('user', 'slug')

@@ -8,7 +8,8 @@ from .views import (
     # resource_interaction,
     # course_progress_update,
     add_comment,  # NEW
-    resource_update, resource_interaction,  # NEW
+    resource_update, resource_interaction, course_enroll, generate_course_ajax, regenerate_course_roadmap,
+    course_analytics,  # NEW
 )
 
 urlpatterns = [
@@ -26,6 +27,14 @@ urlpatterns = [
    path('resource/interaction/', resource_interaction, name='resource_interaction'),
     #path('ajax/progress/', course_progress_update, name='course_progress_update'),
 
+    #course progress
+    path('course/<int:course_id>/enroll/', course_enroll, name='course_enroll'),
+
     # Comments
     path('<slug:resource_slug>/comment/', add_comment, name='add_comment'),  # Comment URL
+
+    path('course/generate-ajax/', generate_course_ajax, name='generate_course_ajax'),
+    path('course/<int:course_id>/regenerate/', regenerate_course_roadmap, name='regenerate_roadmap'),
+
+    path('course/<int:course_id>/analytics/', course_analytics, name='course_analytics'),
 ]

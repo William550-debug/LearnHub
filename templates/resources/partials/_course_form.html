@@ -1,25 +1,688 @@
-{% load widget_tweaks %}
+<!-- templates/resources/course_create.html -->
 
-<div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200">
+{% load static %}
 
+{% block extra_css %}
+<style>
+    .course-creation-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .creation-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    .creation-steps::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #e5e7eb;
+        z-index: 1;
+    }
+    
+    .step {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+    
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .step.active .step-circle {
+        border-color: #4f46e5;
+        background: #4f46e5;
+        color: white;
+    }
+    
+    .step.completed .step-circle {
+        border-color: #10b981;
+        background: #10b981;
+        color: white;
+    }
+    
+    .ai-prompt-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    
+    .form-textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+    
+    .ai-generation-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .ai-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem;
+    }
+    
+    .ai-loader {
+        width: 50px;
+        height: 50px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #4f46e5;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .difficulty-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .difficulty-beginner {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .difficulty-intermediate {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .difficulty-advanced {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .preview-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-header {
+        background: #f9fafb;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .preview-body {
+        padding: 1.5rem;
+    }
+    
+    .module-item {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1rem 0;
+    }
+    
+    .module-item:last-child {
+        border-bottom: none;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+    
+    .btn-primary {
+        background: #4f46e5;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #4338ca;
+    }
+    
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #4b5563;
+    }
+    
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #059669;
+    }
+    
+    .btn-disabled {
+        background: #9ca3af;
+        color: white;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
 
-    <div class="mb-6">
-        <label for="id_estimated_duration_course" class="block text-gray-700 font-medium mb-2">
-            Estimated Duration
-        </label>
-        <div class="relative">
-            {% render_field form.estimated_duration id="id_estimated_duration_course" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent pr-12" placeholder="e.g., 7 03:00:00" %}
-            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <span class="text-gray-500">DD HH:MM:SS</span>
+{% block content %}
+<div class="course-creation-wrapper">
+    <div class="ai-prompt-box">
+        <h2 class="text-xl font-bold mb-2">🎓 AI-Powered Course Creator</h2>
+        <p class="opacity-90">Describe your learning goal, and let our AI build a personalized curriculum with handpicked YouTube videos.</p>
+    </div>
+    
+    <div class="creation-steps">
+        <div class="step active" id="step1">
+            <div class="step-circle">1</div>
+            <span class="text-sm font-medium">Define Course</span>
+        </div>
+        <div class="step" id="step2">
+            <div class="step-circle">2</div>
+            <span class="text-sm font-medium">AI Generation</span>
+        </div>
+        <div class="step" id="step3">
+            <div class="step-circle">3</div>
+            <span class="text-sm font-medium">Preview & Edit</span>
+        </div>
+        <div class="step" id="step4">
+            <div class="step-circle">4</div>
+            <span class="text-sm font-medium">Publish</span>
+        </div>
+    </div>
+    
+    <form method="POST" id="courseCreationForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Step 1: Course Definition -->
+        <div id="step1-content" class="step-content">
+            <h3 class="text-lg font-bold mb-4">Define Your Course</h3>
+            
+            <div class="form-group">
+                <label class="form-label" for="id_title">Course Title</label>
+                <input type="text" 
+                       name="title" 
+                       id="id_title" 
+                       class="form-control" 
+                       placeholder="e.g., Master Python for Data Science"
+                       maxlength="200"
+                       required>
+                <small class="text-gray-500 text-sm mt-1 block">Be specific about what students will learn</small>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="id_description">Course Description</label>
+                <textarea name="description" 
+                          id="id_description" 
+                          class="form-control form-textarea" 
+                          placeholder="Describe what students will achieve, prerequisites, and learning outcomes..."
+                          maxlength="1000"
+                          required></textarea>
+                <small class="text-gray-500 text-sm mt-1 block">The AI will use this to generate a structured curriculum</small>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="id_difficulty">Difficulty Level</label>
+                <select name="difficulty" id="id_difficulty" class="form-control" required>
+                    <option value="">Select difficulty level</option>
+                    <option value="B">Beginner</option>
+                    <option value="I">Intermediate</option>
+                    <option value="A">Advanced</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="id_category">Category</label>
+                <select name="category" id="id_category" class="form-control" required>
+                    <option value="">Select a category</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="id_tags">Tags</label>
+                <input type="text" 
+                       name="tags" 
+                       id="id_tags" 
+                       class="form-control" 
+                       placeholder="python, data-science, machine-learning (comma separated)">
+                <small class="text-gray-500 text-sm mt-1 block">Add relevant tags to help students find your course</small>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button type="button" 
+                        class="btn btn-primary" 
+                        onclick="proceedToStep2()">
+                    Next: AI Generation →
+                </button>
             </div>
         </div>
-        {% for error in form.estimated_duration.errors %}
-            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
-        {% endfor %}
-        <p class="text-sm text-gray-500 mt-1">Format: DD HH:MM:SS (e.g., 7 00:00:00 for 7 days)</p>
-    </div>
-
-    {% with resource_type="course" %}
-        {% include "resources/partials/_common_fields.html" %}
-    {% endwith %}
+        
+        <!-- Step 2: AI Generation -->
+        <div id="step2-content" class="step-content" style="display: none;">
+            <div class="ai-generation-card">
+                <h3 class="text-lg font-bold mb-4">AI Course Generation</h3>
+                <p class="text-gray-600 mb-6">Our AI is creating a personalized curriculum based on your input. This may take a moment.</p>
+                
+                <div id="ai-generation-progress">
+                    <div class="ai-loading">
+                        <div class="ai-loader"></div>
+                        <p id="generation-status">Analyzing course requirements...</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4 max-w-md mx-auto">
+                            <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="generation-results" style="display: none;">
+                    <h4 class="font-bold text-lg mb-4">✓ Course Generated Successfully!</h4>
+                    <div id="generated-preview"></div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between mt-6">
+                <button type="button" 
+                        class="btn btn-secondary" 
+                        onclick="backToStep1()">
+                    ← Back
+                </button>
+                <button type="button" 
+                        class="btn btn-primary" 
+                        id="generate-course-btn"
+                        onclick="generateCourse()">
+                    Generate Course
+                </button>
+                <button type="button" 
+                        class="btn btn-success" 
+                        id="next-to-preview-btn"
+                        style="display: none;"
+                        onclick="proceedToStep3()">
+                    Next: Preview →
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Preview -->
+        <div id="step3-content" class="step-content" style="display: none;">
+            <h3 class="text-lg font-bold mb-4">Preview Your Course</h3>
+            
+            <div id="course-preview">
+                <!-- AI generated content will be inserted here -->
+            </div>
+            
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 class="font-bold text-blue-900 mb-2">✏️ Customization Options</h4>
+                <p class="text-blue-800 text-sm">You can edit module titles, descriptions, or remove videos before publishing.</p>
+                <button type="button" 
+                        class="btn btn-secondary mt-3"
+                        onclick="editCourseStructure()">
+                    Edit Course Structure
+                </button>
+            </div>
+            
+            <div class="flex justify-between mt-6">
+                <button type="button" 
+                        class="btn btn-secondary" 
+                        onclick="backToStep2()">
+                    ← Back
+                </button>
+                <button type="submit" 
+                        class="btn btn-success" 
+                        id="publish-course-btn">
+                    Publish Course 🚀
+                </button>
+            </div>
+        </div>
+    </form>
 </div>
+
+<!-- Hidden fields for AI generated data -->
+<input type="hidden" name="roadmap_json" id="id_roadmap_json">
+<input type="hidden" name="difficulty_progression" id="id_difficulty_progression">
+<input type="hidden" name="ai_generated" value="true">
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentStep = 1;
+    let generatedData = null;
+    
+    function updateSteps() {
+        // Reset all steps
+        document.querySelectorAll('.step').forEach(step => {
+            step.classList.remove('active', 'completed');
+        });
+        
+        // Mark previous steps as completed, current as active
+        for (let i = 1; i <= 4; i++) {
+            const step = document.getElementById(`step${i}`);
+            if (i < currentStep) {
+                step.classList.add('completed');
+            } else if (i === currentStep) {
+                step.classList.add('active');
+            }
+        }
+        
+        // Show/hide step contents
+        for (let i = 1; i <= 4; i++) {
+            const content = document.getElementById(`step${i}-content`);
+            if (content) {
+                content.style.display = i === currentStep ? 'block' : 'none';
+            }
+        }
+    }
+    
+    function proceedToStep2() {
+        // Validate step 1
+        const title = document.getElementById('id_title').value;
+        const description = document.getElementById('id_description').value;
+        
+        if (!title || !description) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        currentStep = 2;
+        updateSteps();
+    }
+    
+    function backToStep1() {
+        currentStep = 1;
+        updateSteps();
+    }
+    
+    function proceedToStep3() {
+        currentStep = 3;
+        updateSteps();
+        renderPreview();
+    }
+    
+    function backToStep2() {
+        currentStep = 2;
+        updateSteps();
+    }
+    
+    async function generateCourse() {
+        const title = document.getElementById('id_title').value;
+        const description = document.getElementById('id_description').value;
+        
+        if (!title || !description) {
+            alert('Please fill in all required fields first');
+            return;
+        }
+        
+        const generateBtn = document.getElementById('generate-course-btn');
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generating...';
+        
+        const statusText = document.getElementById('generation-status');
+        const progressBar = document.getElementById('progress-bar');
+        
+        // Simulate progress updates
+        const progressStages = [
+            'Analyzing course requirements...',
+            'Designing curriculum structure...',
+            'Searching for educational videos...',
+            'Curating best content...',
+            'Finalizing course roadmap...'
+        ];
+        
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 20;
+            if (progress <= 100) {
+                progressBar.style.width = `${progress}%`;
+                const stageIndex = Math.floor(progress / 20) - 1;
+                if (stageIndex < progressStages.length) {
+                    statusText.textContent = progressStages[stageIndex];
+                }
+            }
+        }, 800);
+        
+        try {
+            // Call your Django API endpoint for course generation
+            const response = await fetch('{% url "generate_course_ajax" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    title: title,
+                    description: description,
+                    difficulty: document.getElementById('id_difficulty').value
+                })
+            });
+            
+            clearInterval(interval);
+            progressBar.style.width = '100%';
+            
+            if (response.ok) {
+                generatedData = await response.json();
+                
+                // Hide loading, show results
+                document.getElementById('ai-generation-progress').style.display = 'none';
+                document.getElementById('generation-results').style.display = 'block';
+                
+                // Render preview
+                const previewContainer = document.getElementById('generated-preview');
+                previewContainer.innerHTML = `
+                    <div class="preview-card">
+                        <div class="preview-header">
+                            <h5 class="font-bold">${generatedData.improved_title}</h5>
+                            <p class="text-sm text-gray-600">${generatedData.difficulty_progression || ''}</p>
+                        </div>
+                        <div class="preview-body">
+                            <p class="text-gray-700 mb-3">${generatedData.enriched_description.substring(0, 200)}...</p>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <span class="mr-4">📚 ${generatedData.modules.length} modules</span>
+                                <span>🎬 ${generatedData.total_videos || 0} videos</span>
+                                <span class="ml-auto">⏱️ ${generatedData.total_duration || 'Loading...'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Store generated data in hidden fields
+                document.getElementById('id_roadmap_json').value = JSON.stringify(generatedData.structured_modules);
+                document.getElementById('id_difficulty_progression').value = generatedData.difficulty_progression || '';
+                
+                // Show next button
+                generateBtn.style.display = 'none';
+                document.getElementById('next-to-preview-btn').style.display = 'block';
+                statusText.textContent = 'Course generated successfully!';
+                
+            } else {
+                throw new Error('Failed to generate course');
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            clearInterval(interval);
+            statusText.textContent = 'Error generating course. Please try again.';
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Try Again';
+        }
+    }
+    
+    function renderPreview() {
+        if (!generatedData) return;
+        
+        const previewContainer = document.getElementById('course-preview');
+        
+        let modulesHtml = '';
+        generatedData.structured_modules.forEach((module, index) => {
+            modulesHtml += `
+                <div class="preview-card">
+                    <div class="preview-header">
+                        <h5 class="font-bold">Module ${index + 1}: ${module.title}</h5>
+                        <p class="text-sm text-gray-600">${module.video_count || 0} videos • ${formatDuration(module.duration_seconds)}</p>
+                    </div>
+                    <div class="preview-body">
+                        <p class="text-gray-700 mb-3">${module.description}</p>
+                        
+                        <div class="mb-4">
+                            <h6 class="font-medium text-sm mb-2">Learning Objectives:</h6>
+                            <ul class="list-disc list-inside text-sm text-gray-600">
+                                ${module.objectives ? module.objectives.map(obj => `<li>${obj}</li>`).join('') : ''}
+                            </ul>
+                        </div>
+                        
+                        <h6 class="font-medium text-sm mb-2">Videos:</h6>
+                        <div class="space-y-2">
+                            ${module.videos ? module.videos.map(video => `
+                                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                    <div class="w-10 h-10 bg-red-100 text-red-600 rounded flex items-center justify-center mr-3">
+                                        <i class="fab fa-youtube"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium">${video.title}</p>
+                                        <p class="text-xs text-gray-500">${video.duration} • ${video.channel}</p>
+                                    </div>
+                                </div>
+                            `).join('') : '<p class="text-gray-500 text-sm">No videos found for this module</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        previewContainer.innerHTML = `
+            <div class="mb-6">
+                <h4 class="text-xl font-bold mb-2">${generatedData.improved_title}</h4>
+                <p class="text-gray-700 mb-4">${generatedData.enriched_description}</p>
+                
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <span class="difficulty-badge ${getDifficultyClass(generatedData.difficulty || 'B')}">
+                        ${getDifficultyText(generatedData.difficulty || 'B')}
+                    </span>
+                    <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                        AI-Generated Curriculum
+                    </span>
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                        ${generatedData.total_videos || 0} Videos
+                    </span>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                        ${generatedData.total_duration || 'Duration'}
+                    </span>
+                </div>
+                
+                <div class="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                    <h5 class="font-bold text-blue-900 mb-2">🎯 Learning Progression</h5>
+                    <p class="text-blue-800">${generatedData.difficulty_progression || 'This course will take you from beginner to intermediate level'}</p>
+                </div>
+            </div>
+            
+            <h5 class="font-bold text-lg mb-4">Course Modules</h5>
+            ${modulesHtml}
+        `;
+    }
+    
+    function formatDuration(seconds) {
+        if (!seconds) return '0 min';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        
+        if (hours > 0) {
+            return `${hours} hr ${minutes} min`;
+        }
+        return `${minutes} min`;
+    }
+    
+    function getDifficultyClass(difficulty) {
+        const classes = {
+            'B': 'difficulty-beginner',
+            'I': 'difficulty-intermediate',
+            'A': 'difficulty-advanced'
+        };
+        return classes[difficulty] || 'difficulty-beginner';
+    }
+    
+    function getDifficultyText(difficulty) {
+        const texts = {
+            'B': 'Beginner',
+            'I': 'Intermediate',
+            'A': 'Advanced'
+        };
+        return texts[difficulty] || 'Beginner';
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Initialize
+    updateSteps();
+</script>
+{% endblock %}
